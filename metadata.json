@@ -1,0 +1,6 @@
+{
+  "name": "AssedioAki",
+  "description": "Plataforma segura e acolhedora para denúncia anônima, acompanhamento de casos, mapa de calor interativo de risco e encaminhamento de assédio moral, sexual e importunação sexual para autoridades locais.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
