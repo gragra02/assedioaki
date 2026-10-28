@@ -1,8 +1,8 @@
 import { User } from '../types';
+import { supabase } from './supabase';
 import { addAccessLog } from './accessLogs';
 
 const ADMIN_STORAGE_KEY = 'assedioaki_admin_config';
-const USERS_STORAGE_KEY = 'assedioaki_registered_users';
 
 export interface AdminConfig {
   email: string;
@@ -52,28 +52,6 @@ const INITIAL_USERS: User[] = [
     declarationAcceptedAt: '2026-09-20T10:15:00.000Z',
     createdAt: '2026-09-20T10:14:00.000Z',
     status: 'ativo'
-  },
-  {
-    id: 'usr-reg-camila',
-    name: 'Camila Souza',
-    email: 'camila.florianopolis@gmail.com',
-    isAnonymous: false,
-    role: 'user',
-    authProvider: 'email',
-    declarationAcceptedAt: '2026-09-28T18:45:00.000Z',
-    createdAt: '2026-09-28T18:40:00.000Z',
-    status: 'ativo'
-  },
-  {
-    id: 'usr-reg-juliana',
-    name: 'Juliana Mendes',
-    email: 'juliana.mendes.sc@outlook.com',
-    isAnonymous: false,
-    role: 'user',
-    authProvider: 'email',
-    declarationAcceptedAt: '2026-10-01T11:30:00.000Z',
-    createdAt: '2026-10-01T11:25:00.000Z',
-    status: 'ativo'
   }
 ];
 
@@ -102,7 +80,6 @@ export const verifyAdminCredentials = (emailInput: string, passwordInput: string
   const normalizedEmail = emailInput.trim().toLowerCase();
   const adminEmail = current.email.trim().toLowerCase();
   
-  // Accept standard admin email or short alias "admin"
   const isEmailMatch = normalizedEmail === adminEmail || normalizedEmail === 'admin' || normalizedEmail === 'admin@assedioaki.com.br';
   const isPassMatch = passwordInput === current.password;
   
@@ -130,112 +107,109 @@ export const changeAdminPassword = (
   };
 
   saveAdminConfig(updated);
-  addAccessLog('Alteração de Senha do Administrador Realizada com Sucesso', current.name, current.email, 'admin');
-
-  return { success: true, message: 'Senha do administrador alterada com sucesso!' };
-};
-
-export const createAdminUser = (): User => {
-  const current = getAdminConfig();
-  return {
-    id: 'usr-admin-master',
-    name: current.name,
-    email: current.email,
-    isAnonymous: false,
-    role: 'admin',
-    declarationAcceptedAt: new Date().toISOString(),
-    authProvider: 'email',
-    status: 'ativo'
-  };
+  addAccessLog('Alteração de Senha do Administrador Realizada com Sucesso', current.name, current.email, 'admin', 'sucesso');
+  return { success: true, message: 'Senha de administrador alterada com sucesso.' };
 };
 
 export const getRegisteredUsers = (): User[] => {
   try {
-    const raw = localStorage.getItem(USERS_STORAGE_KEY);
+    const raw = localStorage.getItem('assedioaki_db_users');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch (err) {
-    console.error('Erro ao ler usuários:', err);
-  }
+  } catch {}
   return INITIAL_USERS;
 };
 
-export const saveRegisteredUsers = (users: User[]): void => {
+export const saveRegisteredUser = async (user: User): Promise<void> => {
+  const current = getRegisteredUsers();
+  const existingIndex = current.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
+  
+  let updated: User[];
+  if (existingIndex >= 0) {
+    updated = [...current];
+    updated[existingIndex] = { ...current[existingIndex], ...user };
+  } else {
+    const userWithMeta: User = {
+      ...user,
+      createdAt: user.createdAt || new Date().toISOString(),
+      status: user.status || 'ativo'
+    };
+    updated = [userWithMeta, ...current];
+  }
+
   try {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  } catch (err) {
-    console.error('Erro ao salvar usuários:', err);
+    localStorage.setItem('assedioaki_db_users', JSON.stringify(updated));
+  } catch {}
+
+  if (supabase) {
+    await supabase.from('users').upsert({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar || null,
+      is_anonymous: user.isAnonymous,
+      declaration_accepted_at: user.declarationAcceptedAt,
+      auth_provider: user.authProvider,
+      role: user.role || 'user',
+      status: user.status || 'ativo'
+    });
   }
 };
 
-export const deleteUserById = (userId: string): { success: boolean; message: string } => {
+export const toggleUserBlockStatus = async (userId: string): Promise<User[]> => {
   const current = getRegisteredUsers();
-  const target = current.find(u => u.id === userId);
-
-  if (!target) {
-    return { success: false, message: 'Usuário não encontrado.' };
-  }
-
-  if (target.role === 'admin' && userId === 'usr-admin-1') {
-    return { success: false, message: 'Não é permitido excluir a conta do Administrador Geral.' };
-  }
-
-  const filtered = current.filter(u => u.id !== userId);
-  saveRegisteredUsers(filtered);
-
-  addAccessLog(`Exclusão do Usuário: ${target.name} (${target.email})`, 'Administrador Geral SC', 'admin@assedioaki.sc.gov.br', 'admin');
-
-  return { success: true, message: `Usuário ${target.name} excluído com sucesso!` };
-};
-
-export const toggleUserBlockStatus = (userId: string): { success: boolean; message: string; newStatus: 'ativo' | 'bloqueado' } => {
-  const current = getRegisteredUsers();
-  const target = current.find(u => u.id === userId);
-
-  if (!target) {
-    return { success: false, message: 'Usuário não encontrado.', newStatus: 'ativo' };
-  }
-
-  if (target.role === 'admin' || target.id === 'usr-admin-1' || target.id === 'usr-admin-master') {
-    return { success: false, message: 'Não é permitido bloquear a conta do Administrador Geral.', newStatus: 'ativo' };
-  }
-
-  const nextStatus: 'ativo' | 'bloqueado' = target.status === 'bloqueado' ? 'ativo' : 'bloqueado';
-
-  const updatedUsers = current.map(u => {
+  const updated = current.map(u => {
     if (u.id === userId) {
-      return { ...u, status: nextStatus };
+      const newStatus = u.status === 'bloqueado' ? 'ativo' : 'bloqueado';
+      const modified = { ...u, status: newStatus as 'ativo' | 'bloqueado' };
+      if (supabase) {
+        supabase.from('users').update({ status: newStatus }).eq('id', userId);
+      }
+      return modified;
     }
     return u;
   });
 
-  saveRegisteredUsers(updatedUsers);
+  try {
+    localStorage.setItem('assedioaki_db_users', JSON.stringify(updated));
+  } catch {}
+  return updated;
+};
 
-  const actionText = nextStatus === 'bloqueado' 
-    ? `Bloqueio do Usuário Efetivado: ${target.name} (${target.email})`
-    : `Desbloqueio do Usuário Efetivado: ${target.name} (${target.email})`;
+export const deleteUserById = async (userId: string): Promise<User[]> => {
+  const current = getRegisteredUsers();
+  const updated = current.filter(u => u.id !== userId);
+  try {
+    localStorage.setItem('assedioaki_db_users', JSON.stringify(updated));
+  } catch {}
 
-  addAccessLog(
-    actionText, 
-    'Administrador Geral SC', 
-    'admin@assedioaki.sc.gov.br', 
-    'admin', 
-    nextStatus === 'bloqueado' ? 'aviso' : 'sucesso'
-  );
-
-  const message = nextStatus === 'bloqueado'
-    ? `Usuário ${target.name} foi bloqueado com sucesso! O acesso desta conta está suspenso.`
-    : `Usuário ${target.name} foi desbloqueado com sucesso!`;
-
-  return { success: true, message, newStatus: nextStatus };
+  if (supabase) {
+    await supabase.from('users').delete().eq('id', userId);
+  }
+  return updated;
 };
 
 export const isUserBlocked = (email: string): boolean => {
   const users = getRegisteredUsers();
-  const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
-  return found ? found.status === 'bloqueado' : false;
+  const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  return found?.status === 'bloqueado';
+};
+
+export const createAdminUser = (): User => {
+  const adminCfg = getAdminConfig();
+  const adminUser: User = {
+    id: 'usr-admin-master',
+    name: adminCfg.name,
+    email: adminCfg.email,
+    isAnonymous: false,
+    role: 'admin',
+    authProvider: 'email',
+    declarationAcceptedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    status: 'ativo'
+  };
+  saveRegisteredUser(adminUser);
+  return adminUser;
 };

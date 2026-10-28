@@ -1,8 +1,8 @@
 import { AccessLog } from '../types';
+import { supabase } from './supabase';
 
 const LOGS_STORAGE_KEY = 'assedioaki_access_logs';
 
-// Detecção dinâmica de Time Zone
 export const getSystemTimeZone = (): string => {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -15,7 +15,6 @@ export const getSystemTimeZone = (): string => {
   }
 };
 
-// Detecção ou geração consistente de IP de cliente
 let cachedClientIp: string | null = null;
 
 if (typeof window !== 'undefined') {
@@ -40,7 +39,6 @@ export const getClientIp = (): string => {
     }
   } catch {}
   
-  // IPs públicos típicos de operadoras de Santa Catarina (Claro, Vivo, Unifique)
   const scIps = [
     '177.136.241.102', // Florianópolis / SC
     '201.86.194.55',   // Joinville / SC
@@ -55,7 +53,6 @@ export const getClientIp = (): string => {
   return selected;
 };
 
-// Histórico inicial de logs de acesso
 const INITIAL_LOGS: AccessLog[] = [
   {
     id: 'log-101',
@@ -82,45 +79,6 @@ const INITIAL_LOGS: AccessLog[] = [
     location: 'Joinville, SC - Brasil',
     device: 'Mobile Safari / iOS 17.5',
     status: 'sucesso'
-  },
-  {
-    id: 'log-103',
-    timestamp: '2026-10-03T16:22:05.000Z',
-    userName: 'Maria Clara Silva',
-    userEmail: 'maria.clara@gmail.com',
-    userRole: 'user',
-    action: 'Consulta ao Mapa de Calor e DPCAMI / DEAM de Florianópolis',
-    ip: '177.136.241.102',
-    timeZone: 'America/Sao_Paulo (UTC-3)',
-    location: 'Florianópolis, SC - Brasil',
-    device: 'Desktop Firefox / Ubuntu Linux',
-    status: 'sucesso'
-  },
-  {
-    id: 'log-104',
-    timestamp: '2026-10-03T15:05:44.000Z',
-    userName: 'Visitante Não Identificada',
-    userEmail: 'acesso.externo@sc.gov.br',
-    userRole: 'anonymous',
-    action: 'Acesso à Página Inicial e Declaração de Uso Seguro Aceita',
-    ip: '189.102.14.73',
-    timeZone: 'America/Sao_Paulo (UTC-3)',
-    location: 'Blumenau, SC - Brasil',
-    device: 'Mobile Chrome / Android 14',
-    status: 'sucesso'
-  },
-  {
-    id: 'log-105',
-    timestamp: '2026-10-03T14:18:30.000Z',
-    userName: 'Amanda R.',
-    userEmail: 'amanda.rodrigues@hotmail.com',
-    userRole: 'user',
-    action: 'Envio de Mensagem de Apoio Comunitário na Denúncia ASK-90412',
-    ip: '179.184.210.19',
-    timeZone: 'America/Sao_Paulo (UTC-3)',
-    location: 'Criciúma, SC - Brasil',
-    device: 'Desktop Edge / Windows 10',
-    status: 'sucesso'
   }
 ];
 
@@ -129,51 +87,20 @@ export const getAccessLogs = (): AccessLog[] => {
     const raw = localStorage.getItem(LOGS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch (err) {
-    console.error('Erro ao ler logs de acesso:', err);
-  }
+  } catch {}
   return INITIAL_LOGS;
 };
 
-export const saveAccessLogs = (logs: AccessLog[]): void => {
-  try {
-    localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs));
-  } catch (err) {
-    console.error('Erro ao salvar logs de acesso:', err);
-  }
-};
-
-export const addAccessLog = (
+export const addAccessLog = async (
   action: string,
-  userName = 'Usuária Anônima',
+  userName = 'Visitante Anônima',
   userEmail = 'anonimo@assedioaki.com.br',
   userRole: 'admin' | 'user' | 'anonymous' = 'anonymous',
   status: 'sucesso' | 'aviso' | 'bloqueado' = 'sucesso'
-): AccessLog => {
-  const current = getAccessLogs();
-  const timeZone = getSystemTimeZone();
-  const ip = getClientIp();
-
-  let location = 'Santa Catarina, Brasil';
-  if (ip.startsWith('177.')) location = 'Florianópolis, SC - Brasil';
-  else if (ip.startsWith('201.')) location = 'Joinville, SC - Brasil';
-  else if (ip.startsWith('189.')) location = 'Blumenau, SC - Brasil';
-  else if (ip.startsWith('179.')) location = 'Criciúma, SC - Brasil';
-
-  let device = 'Navegador Web';
-  if (typeof navigator !== 'undefined') {
-    const ua = navigator.userAgent;
-    if (ua.includes('iPhone') || ua.includes('iPad')) device = 'Mobile Safari / iOS';
-    else if (ua.includes('Android')) device = 'Mobile Chrome / Android';
-    else if (ua.includes('Windows')) device = 'Desktop Chrome / Windows';
-    else if (ua.includes('Macintosh')) device = 'Desktop Safari / macOS';
-    else if (ua.includes('Linux')) device = 'Desktop Browser / Linux';
-  }
-
+): Promise<AccessLog[]> => {
+  const currentLogs = getAccessLogs();
   const newLog: AccessLog = {
     id: 'log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
     timestamp: new Date().toISOString(),
@@ -181,65 +108,75 @@ export const addAccessLog = (
     userEmail,
     userRole,
     action,
-    ip,
-    timeZone,
-    location,
-    device,
+    ip: getClientIp(),
+    timeZone: getSystemTimeZone(),
+    location: 'Santa Catarina, Brasil',
+    device: navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser',
     status
   };
 
-  const updated = [newLog, ...current].slice(0, 300); // keep latest 300 logs
-  saveAccessLogs(updated);
-  return newLog;
+  const updated = [newLog, ...currentLogs];
+  try {
+    localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(updated));
+  } catch {}
+
+  if (supabase) {
+    await supabase.from('access_logs').insert({
+      id: newLog.id,
+      timestamp: newLog.timestamp,
+      user_name: newLog.userName,
+      user_email: newLog.userEmail || null,
+      user_role: newLog.userRole,
+      action: newLog.action,
+      ip: newLog.ip,
+      time_zone: newLog.timeZone,
+      location: newLog.location,
+      device: newLog.device,
+      status: newLog.status
+    });
+  }
+
+  return updated;
 };
 
-export const clearAccessLogs = (): void => {
-  saveAccessLogs([]);
+export const clearAccessLogs = async (): Promise<AccessLog[]> => {
+  try {
+    localStorage.removeItem(LOGS_STORAGE_KEY);
+  } catch {}
+
+  if (supabase) {
+    await supabase.from('access_logs').delete().neq('id', '');
+  }
+
+  return [];
 };
 
-export const exportAccessLogsToCSV = (logs: AccessLog[]): void => {
-  const headers = [
-    'ID Log',
-    'Data e Hora (ISO)',
-    'Data e Hora Formatada (pt-BR)',
-    'Usuário / Identificação',
-    'E-mail',
-    'Papel (Role)',
-    'Ação Executada',
-    'Endereço IP',
-    'Fuso Horário (Time Zone)',
-    'Localidade Estimada',
-    'Dispositivo / Sistema Operacional',
-    'Status'
-  ];
+export const exportAccessLogsToCSV = (): void => {
+  const logs = getAccessLogs();
+  let csvContent = 'data:text/csv;charset=utf-8,ID,Data/Hora,Utilizador,Email,Papel,Acao,IP,Fuso Horario,Localizacao,Dispositivo,Status\n';
 
-  const rows = logs.map(log => {
-    const formattedDate = new Date(log.timestamp).toLocaleString('pt-BR');
-    return [
-      `"${log.id}"`,
-      `"${log.timestamp}"`,
-      `"${formattedDate}"`,
-      `"${log.userName.replace(/"/g, '""')}"`,
-      `"${(log.userEmail || '').replace(/"/g, '""')}"`,
-      `"${log.userRole}"`,
-      `"${log.action.replace(/"/g, '""')}"`,
-      `"${log.ip}"`,
-      `"${log.timeZone}"`,
-      `"${log.location}"`,
-      `"${log.device}"`,
-      `"${log.status}"`
-    ].join(';');
+  logs.forEach(l => {
+    const row = [
+      l.id,
+      l.timestamp,
+      `"${l.userName}"`,
+      `"${l.userEmail || ''}"`,
+      l.userRole,
+      `"${l.action}"`,
+      l.ip,
+      `"${l.timeZone}"`,
+      `"${l.location}"`,
+      `"${l.device}"`,
+      l.status
+    ].join(',');
+    csvContent += row + '\n';
   });
 
-  const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
+  const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
-  const nowStr = new Date().toISOString().slice(0, 10);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `relatorio_auditoria_logs_assedioaki_${nowStr}.csv`);
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `relatorio_auditoria_assedioaki_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 };
