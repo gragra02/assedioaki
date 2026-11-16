@@ -1,41 +1,46 @@
 import React, { useState } from 'react';
 import { STATE_AUTHORITIES } from '../lib/initialData';
 import { Report } from '../types';
-import { Shield, PhoneCall, ExternalLink, Copy, Check, MessageSquare, AlertTriangle, FileText, ArrowRight, Building, Sparkles } from 'lucide-react';
+import {
+  Shield,
+  PhoneCall,
+  ExternalLink,
+  Copy,
+  Check,
+  MessageSquare,
+  AlertTriangle,
+  Building
+} from 'lucide-react';
 
 interface AuthoritiesForwardingProps {
   reports: Report[];
 }
 
 export const AuthoritiesForwarding: React.FC<AuthoritiesForwardingProps> = ({ reports }) => {
-  const [selectedState, setSelectedState] = useState<string>('SC');
   const [selectedReportId, setSelectedReportId] = useState<string>('');
   const [copiedText, setCopiedText] = useState<boolean>(false);
 
-  const currentStateConfig = STATE_AUTHORITIES.find(s => s.stateCode === selectedState) || STATE_AUTHORITIES[0];
-  const activeReport = reports.find(r => r.id === selectedReportId);
+  const currentStateConfig = STATE_AUTHORITIES.find((s) => s.stateCode === 'SC') || STATE_AUTHORITIES[0];
+  const activeReport = reports.find((r) => r.id === selectedReportId);
 
-  // Generate Official B.O. Format for Copy/Paste into Virtual Delegation
-  const generatedBOText = activeReport ? `
-BOLETIM DE OCORRÊNCIA VIRTUAL / DENÚNCIA - CANAL ASSÉDIOAKI
+  const generatedBOText = activeReport
+    ? `MINUTA PARA BOLETIM DE OCORRÊNCIA - SANTA CATARINA
 ------------------------------------------------------------
-PROTOCOLO DA PLATAFORMA: ${activeReport.id}
-TIPO DE INCIDENTE: ${activeReport.category.toUpperCase().replace('_', ' ')}
-GRAU DE RISCO: ${activeReport.riskLevel.toUpperCase()}
+PROTOCOLO DE APOIO (APP): ${activeReport.id}
+TIPO DE OCORRÊNCIA: ${activeReport.category.toUpperCase().replace('_', ' ')}
 MODALIDADE: ${activeReport.isAnonymous ? 'DENÚNCIA ANÔNIMA' : 'IDENTIFICADA SOB SIGILO'}
 
-DATA E HORA DO FATO: ${new Date(activeReport.dateTime).toLocaleString('pt-BR')}
+DATA E HORA APROXIMADA: ${new Date(activeReport.dateTime).toLocaleString('pt-BR')}
 LOCALIZAÇÃO: ${activeReport.address}, ${activeReport.city} - ${activeReport.state}
-TIPO DE AMBIENTE: ${activeReport.locationType.toUpperCase()}
+AMBIENTE: ${activeReport.locationType.toUpperCase()}
 
-DESCRIÇÃO DOS FATOS:
+RELATO DOS FATOS:
 ${activeReport.description}
 
-INFORMAÇÕES DO AGRESSOR: ${activeReport.aggressorDetails || 'Não informado / desconhecido'}
+INFORMAÇÕES SOBRE O AUTOR: ${activeReport.aggressorDetails || 'Não informado'}
 TESTEMUNHAS: ${activeReport.witnesses || 'Não informado'}
-
-DOCUMENTO GERADO COM CRIPTOGRAFIA DE PONTA A PONTA (SHA-256: ${activeReport.encryptionHash || 'E2EE-VERIFIED'})
-` : `Selecione uma denúncia abaixo para sintetizar a minuta do Boletim de Ocorrência.`;
+`
+    : 'Selecione um protocolo salvo abaixo para organizar o texto antes de acessar a Delegacia Virtual de Santa Catarina.';
 
   const handleCopyBO = () => {
     navigator.clipboard.writeText(generatedBOText);
@@ -45,102 +50,93 @@ DOCUMENTO GERADO COM CRIPTOGRAFIA DE PONTA A PONTA (SHA-256: ${activeReport.encr
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Top Banner */}
-      <div className="bg-slate-900 border border-purple-900/40 rounded-2xl p-5 sm:p-7 shadow-xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
-            <Shield className="w-7 h-7" />
+      {/* Official Channels Banner */}
+      <div className="bg-white border border-[#e6dfee] rounded-2xl p-5 sm:p-7 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#f3eef8] text-[#6d4c82] flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" aria-hidden="true" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white font-heading">
-              Encaminhamento para Autoridades de Santa Catarina
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-[#6d4c82]">
+              Serviços oficiais da Segurança Pública em Santa Catarina
+            </p>
+            <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading">
+              Canais oficiais e preparação de Boletim de Ocorrência
             </h2>
-            <p className="text-xs text-slate-400">
-              Direcionamento exclusivo para a Polícia Civil de Santa Catarina (DPCAMI / DEAM) e Central 181 / 180.
+            <p className="text-sm text-[#5a4e66]">
+              Este aplicativo não envia denúncias automaticamente à polícia. Use esta página para organizar seu relato e acessar os portais oficiais.
             </p>
           </div>
         </div>
 
-        {/* Emergency Hotline Buttons Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          {/* WhatsApp 180 Direct Link */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <a
-            href="https://wa.me/556196100180?text=Ol%C3%A1%2C%20preciso%20fazer%20uma%20den%C3%BAncia%20e%20buscar%20orienta%C3%A7%C3%A3o%20sobre%20ass%C3%A9dio."
+            href="https://wa.me/556196100180?text=Ol%C3%A1%2C%20preciso%20fazer%20uma%20den%C3%BAncia%20e%20buscar%20orienta%C3%A7%C3%A3o."
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/40 rounded-xl flex items-center justify-between group transition-all shadow-md"
+            className="min-h-[64px] p-4 bg-[#f1f6f3] hover:bg-[#e4efe8] border border-[#cde0d4] rounded-xl flex items-center justify-between gap-3 transition-colors"
           >
             <div className="space-y-0.5">
-              <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider block">WhatsApp Oficial 180</span>
-              <strong className="text-sm text-white font-bold block">Central da Mulher</strong>
-              <span className="text-[11px] text-emerald-200">Clique para abrir chat no Zap</span>
+              <span className="text-xs font-medium text-[#26543b] block">WhatsApp oficial 180</span>
+              <strong className="text-sm text-[#1e3d2b] font-semibold block">Central da Mulher</strong>
+              <span className="text-xs text-[#3b614b]">Atendimento por mensagem</span>
             </div>
-            <MessageSquare className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <MessageSquare className="w-5 h-5 text-[#26543b] shrink-0" aria-hidden="true" />
           </a>
 
-          {/* Hotline 180 */}
           <a
             href="tel:180"
-            className="p-4 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/40 rounded-xl flex items-center justify-between group transition-all shadow-md"
+            className="min-h-[64px] p-4 bg-[#f3eef8] hover:bg-[#eae1f3] border border-[#ddd1ea] rounded-xl flex items-center justify-between gap-3 transition-colors"
           >
             <div className="space-y-0.5">
-              <span className="text-[10px] text-purple-300 font-bold uppercase tracking-wider block">Ligação Gratuita</span>
-              <strong className="text-sm text-white font-bold block">Ligue 180 (24 Horas)</strong>
-              <span className="text-[11px] text-purple-200">Atendimento emergencial</span>
+              <span className="text-xs font-medium text-[#4f3461] block">Ligação gratuita 24h</span>
+              <strong className="text-sm text-[#261d2e] font-semibold block">Ligue 180</strong>
+              <span className="text-xs text-[#5a4e66]">Orientação e denúncia</span>
             </div>
-            <PhoneCall className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
+            <PhoneCall className="w-5 h-5 text-[#6d4c82] shrink-0" aria-hidden="true" />
           </a>
 
-          {/* Hotline 190 PM */}
           <a
             href="tel:190"
-            className="p-4 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 rounded-xl flex items-center justify-between group transition-all shadow-md"
+            className="min-h-[64px] p-4 bg-[#fbf2f4] hover:bg-[#f6e4e9] border border-[#e7cbd3] rounded-xl flex items-center justify-between gap-3 transition-colors"
           >
             <div className="space-y-0.5">
-              <span className="text-[10px] text-rose-300 font-bold uppercase tracking-wider block">Polícia Militar</span>
-              <strong className="text-sm text-white font-bold block">Ligue 190 (Emergência)</strong>
-              <span className="text-[11px] text-rose-200">Perigo ou agressão iminente</span>
+              <span className="text-xs font-medium text-[#7f3347] block">Emergência policial</span>
+              <strong className="text-sm text-[#261d2e] font-semibold block">Ligue 190 (PM)</strong>
+              <span className="text-xs text-[#694853]">Perigo ou agressão agora</span>
             </div>
-            <AlertTriangle className="w-6 h-6 text-rose-400 group-hover:scale-110 transition-transform" />
+            <AlertTriangle className="w-5 h-5 text-[#8c3d52] shrink-0" aria-hidden="true" />
           </a>
         </div>
       </div>
 
-      {/* State Delegation Selector & Virtual BO Synthesizer */}
+      {/* State Directory & Virtual BO Text Helper */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: State Directory */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <h3 className="text-sm font-bold text-white font-heading flex items-center gap-2">
-            <Building className="w-4 h-4 text-purple-400" />
-            <span>Delegacia Eletrônica SC (DPCAMI / DEAM)</span>
+        <div className="bg-white border border-[#e6dfee] rounded-2xl p-5 space-y-4">
+          <h3 className="text-base font-semibold text-[#261d2e] font-heading flex items-center gap-2">
+            <Building className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
+            <span>Delegacia Virtual de SC</span>
           </h3>
 
-          <div>
-            <label className="block text-xs text-slate-400 mb-1 font-medium">Estado de Atuação</label>
-            <div className="w-full px-3 py-2 bg-slate-950 border border-purple-800/60 rounded-xl text-xs text-purple-200 font-bold flex items-center justify-between">
-              <span>Santa Catarina (SC)</span>
-              <span className="text-[10px] bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded-md border border-purple-500/30">Atuação Exclusiva</span>
-            </div>
-          </div>
-
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3 text-xs">
-            <h4 className="font-bold text-purple-300">{currentStateConfig.stateName}</h4>
-            <p className="text-slate-300 leading-relaxed">{currentStateConfig.deamInfo}</p>
-            <p className="text-slate-300">
-              <strong className="text-white">Telefone de Atendimento:</strong> {currentStateConfig.deamPhone}
+          <div className="p-4 bg-[#faf8fb] border border-[#efe9f4] rounded-xl space-y-3 text-sm text-[#493d54]">
+            <h4 className="font-semibold text-[#261d2e]">{currentStateConfig.stateName}</h4>
+            <p className="text-xs sm:text-sm text-[#5a4e66] leading-relaxed">
+              {currentStateConfig.deamInfo}
+            </p>
+            <p className="text-xs sm:text-sm">
+              <strong className="text-[#261d2e]">Telefone:</strong> {currentStateConfig.deamPhone}
             </p>
 
             {currentStateConfig.whatsapp && (
-              <p className="text-slate-300 flex items-center gap-1.5 flex-wrap">
-                <strong className="text-white">Denúncia pelo WhatsApp:</strong>
+              <p className="text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
+                <strong className="text-[#261d2e]">WhatsApp PCSC:</strong>
                 <a
-                  href={`https://wa.me/${currentStateConfig.whatsapp}?text=${encodeURIComponent('Olá, gostaria de fazer uma denúncia/orientação.')}`}
+                  href={`https://wa.me/${currentStateConfig.whatsapp}?text=${encodeURIComponent('Olá, gostaria de orientação sobre denúncia.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 underline"
+                  className="text-[#26543b] font-semibold underline"
                 >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>(48) 98844-0083</span>
+                  (48) 98844-0083
                 </a>
               </p>
             )}
@@ -149,35 +145,35 @@ DOCUMENTO GERADO COM CRIPTOGRAFIA DE PONTA A PONTA (SHA-256: ${activeReport.encr
               href={currentStateConfig.delegaciaVirtualUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full px-3 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-center transition-colors cursor-pointer text-xs shadow-md mt-2 leading-tight"
+              className="w-full min-h-[44px] px-4 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-center transition-colors text-xs sm:text-sm"
             >
-              <span className="text-center">Acessar Delegacia Virtual e Registrar Boletim de Ocorrência</span>
-              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+              <span>Abrir Delegacia Virtual SC</span>
+              <ExternalLink className="w-4 h-4 shrink-0" aria-hidden="true" />
             </a>
           </div>
         </div>
 
-        {/* Right: B.O. Format Builder */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div>
-              <h3 className="text-sm font-bold text-white font-heading">
-                Sintetizador de B.O. para Envio às Autoridades
-              </h3>
-              <p className="text-xs text-slate-400">
-                Selecione uma de suas denúncias para formatar o texto padrão oficial de Boletim de Ocorrência.
-              </p>
-            </div>
+        <div className="lg:col-span-2 bg-white border border-[#e6dfee] rounded-2xl p-5 sm:p-6 space-y-4">
+          <div className="border-b border-[#efe9f4] pb-3 space-y-1">
+            <h3 className="text-base font-semibold text-[#261d2e] font-heading">
+              Organizador de texto para Boletim de Ocorrência
+            </h3>
+            <p className="text-sm text-[#5a4e66]">
+              Se você já salvou um relato neste aparelho, selecione-o abaixo para gerar um rascunho organizado e colar no site da Delegacia Virtual.
+            </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Selecione o Protocolo</label>
+            <label htmlFor="bo-report-select" className="block text-xs font-semibold text-[#261d2e] mb-1">
+              Escolha um protocolo salvo
+            </label>
             <select
+              id="bo-report-select"
               value={selectedReportId}
               onChange={(e) => setSelectedReportId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+              className="w-full min-h-[44px] px-3 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
             >
-              <option value="">-- Escolha um relato registrado --</option>
+              <option value="">-- Selecione um protocolo --</option>
               {reports.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.id} - {r.title} ({r.city})
@@ -186,41 +182,39 @@ DOCUMENTO GERADO COM CRIPTOGRAFIA DE PONTA A PONTA (SHA-256: ${activeReport.encr
             </select>
           </div>
 
-          <div className="relative">
-            <textarea 
-              rows={10}
+          <div className="space-y-3">
+            <label htmlFor="bo-generated-text" className="sr-only">
+              Texto organizado para Boletim de Ocorrência
+            </label>
+            <textarea
+              id="bo-generated-text"
+              rows={9}
               readOnly
               value={generatedBOText}
-              className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none leading-relaxed"
+              className="w-full p-4 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-xs sm:text-sm font-mono text-[#261d2e] leading-relaxed"
             />
-            
+
             {activeReport && (
-              <div className="absolute top-3 right-3 flex items-center gap-2">
+              <div className="flex justify-end">
                 <button
+                  type="button"
                   onClick={handleCopyBO}
-                  className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                  className="min-h-[44px] px-4 py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white text-sm font-semibold rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   {copiedText ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-300" />
-                      <span>Copiado!</span>
+                      <Check className="w-4 h-4" aria-hidden="true" />
+                      <span>Texto copiado</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copiar Texto</span>
+                      <Copy className="w-4 h-4" aria-hidden="true" />
+                      <span>Copiar texto</span>
                     </>
                   )}
                 </button>
               </div>
             )}
-          </div>
-
-          <div className="p-3.5 bg-purple-950/30 border border-purple-500/30 rounded-xl text-xs text-purple-200 flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
-            <p>
-              <strong>Instrução:</strong> Após copiar o texto acima, acesse o portal da Polícia Civil do seu estado botão à esquerda, cole os dados no formulário de Registro de Ocorrência Online e guarde o protocolo oficial expedido.
-            </p>
           </div>
         </div>
       </div>

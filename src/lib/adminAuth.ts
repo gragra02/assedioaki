@@ -34,7 +34,6 @@ const INITIAL_USERS: User[] = [
     id: 'usr-google-maria',
     name: 'Maria Clara Silva',
     email: 'maria.clara@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     isAnonymous: false,
     role: 'user',
     authProvider: 'google',

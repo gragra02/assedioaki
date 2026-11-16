@@ -1,30 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar } from './components/Navbar';
+import { Navbar, NavSection } from './components/Navbar';
 import { QuickExitMask } from './components/QuickExitMask';
-import { SafeSpaceDeclarationModal } from './components/SafeSpaceDeclarationModal';
 import { AuthModal } from './components/AuthModal';
 import { HeatmapView } from './components/HeatmapView';
 import { ReportFormModal } from './components/ReportFormModal';
 import { CaseTracker } from './components/CaseTracker';
-import { AuthoritiesForwarding } from './components/AuthoritiesForwarding';
-import { SupportNetwork } from './components/SupportNetwork';
-import { SupportInstitutions } from './components/SupportInstitutions';
-import { FloatingReportButton } from './components/FloatingReportButton';
 import { MenuModal, MenuModalSection } from './components/MenuModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
+import { HomeView, AppSection } from './components/HomeView';
+import { HelpNowView } from './components/HelpNowView';
+import { UnderstandView } from './components/UnderstandView';
+import { TalkSupportView } from './components/TalkSupportView';
+import { RightsView } from './components/RightsView';
 import { INITIAL_REPORTS, SUPPORT_CENTERS } from './lib/initialData';
 import { Report, User, ReportComment } from './types';
 import { supabase, mapDbRowToReport, mapReportToDbRow } from './lib/supabase';
 import appLogo from './assets/logo.jpg';
 
+const VALID_SECTIONS: NavSection[] = [
+  'home',
+  'help',
+  'understand',
+  'talk',
+  'rights',
+  'report',
+  'track',
+  'map'
+];
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'report' | 'heatmap' | 'locator' | 'authorities' | 'support' | 'track'>('heatmap');
+  const [activeSection, setActiveSection] = useState<NavSection>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view') as NavSection | null;
+    if (viewParam && VALID_SECTIONS.includes(viewParam)) {
+      return viewParam;
+    }
+    return 'home';
+  });
+
   const [isMasked, setIsMasked] = useState<boolean>(false);
-  const [isDeclarationOpen, setIsDeclarationOpen] = useState<boolean>(true);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState<boolean>(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState<boolean>(false);
-  const [menuModalSection, setMenuModalSection] = useState<MenuModalSection>('identify');
+  const [menuModalSection, setMenuModalSection] = useState<MenuModalSection>('privacy');
   const [user, setUser] = useState<User | null>(null);
 
   const [reports, setReports] = useState<Report[]>(() => {
@@ -37,10 +55,15 @@ export default function App() {
             return INITIAL_REPORTS;
           }
           const existingIds = new Set(parsed.map((r: any) => r.id));
-          const missing = INITIAL_REPORTS.filter(r => !existingIds.has(r.id));
+          const missing = INITIAL_REPORTS.filter((r) => !existingIds.has(r.id));
           const merged = parsed.map((r: any) => {
-            const initialMatch = INITIAL_REPORTS.find(init => init.id === r.id);
-            if (initialMatch && (!r.comments || r.comments.length === 0) && initialMatch.comments && initialMatch.comments.length > 0) {
+            const initialMatch = INITIAL_REPORTS.find((init) => init.id === r.id);
+            if (
+              initialMatch &&
+              (!r.comments || r.comments.length === 0) &&
+              initialMatch.comments &&
+              initialMatch.comments.length > 0
+            ) {
               return { ...r, comments: initialMatch.comments };
             }
             return r;
@@ -48,7 +71,7 @@ export default function App() {
           return [...merged, ...missing];
         }
         return INITIAL_REPORTS;
-      } catch (e) {
+      } catch {
         return INITIAL_REPORTS;
       }
     }
@@ -56,15 +79,18 @@ export default function App() {
   });
 
   const [selectedTrackId, setSelectedTrackId] = useState<string>('');
-  const [reportLocationPreload, setReportLocationPreload] = useState<{ lat?: number; lng?: number; address?: string }>({});
+  const [reportLocationPreload, setReportLocationPreload] = useState<{
+    lat?: number;
+    lng?: number;
+    address?: string;
+  }>({});
 
-  // Sincronizar denúncias, comentários, logs e utilizadores com o Supabase (PostgreSQL) ao carregar
+  // Optional Supabase sync when configured
   useEffect(() => {
     async function fetchFromSupabase() {
       if (!supabase) return;
 
       try {
-        // 1. Sincronizar Denúncias
         const { data: reportsData, error: reportsError } = await supabase
           .from('reports')
           .select('*')
@@ -111,49 +137,6 @@ export default function App() {
             }
           }
         }
-
-        // 2. Sincronizar Logs de Auditoria
-        const { data: logsData } = await supabase
-          .from('access_logs')
-          .select('*')
-          .order('timestamp', { ascending: false });
-
-        if (logsData && logsData.length > 0) {
-          const mappedLogs = logsData.map(l => ({
-            id: l.id,
-            timestamp: l.timestamp,
-            userName: l.user_name,
-            userEmail: l.user_email,
-            userRole: l.user_role,
-            action: l.action,
-            ip: l.ip,
-            timeZone: l.time_zone,
-            location: l.location,
-            device: l.device,
-            status: l.status
-          }));
-          localStorage.setItem('assedioaki_access_logs', JSON.stringify(mappedLogs));
-        }
-
-        // 3. Sincronizar Utilizadores Registados
-        const { data: usersData } = await supabase
-          .from('users')
-          .select('*');
-
-        if (usersData && usersData.length > 0) {
-          const mappedUsers = usersData.map(u => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            avatar: u.avatar,
-            isAnonymous: u.is_anonymous,
-            declarationAcceptedAt: u.declaration_accepted_at,
-            authProvider: u.auth_provider,
-            role: u.role,
-            status: u.status
-          }));
-          localStorage.setItem('assedioaki_db_users', JSON.stringify(mappedUsers));
-        }
       } catch (err) {
         console.error('Erro na sincronização inicial com Supabase:', err);
       }
@@ -162,40 +145,46 @@ export default function App() {
     fetchFromSupabase();
   }, []);
 
-  // Salvar relatórios no localStorage como fallback local
   useEffect(() => {
     localStorage.setItem('assedioaki_reports', JSON.stringify(reports));
   }, [reports]);
 
-  // Atalho da tecla ESC para ativar a Máscara de Saída Rápida
+  // ESC shortcut activates Quick Exit Mask
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setIsMasked(prev => !prev);
+        setIsMasked((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const navigateTo = (section: NavSection) => {
+    setActiveSection(section);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleAddNewReport = async (newReport: Report) => {
-    setReports(prev => [newReport, ...prev]);
+    setReports((prev) => [newReport, ...prev]);
     if (supabase) {
       await supabase.from('reports').insert(mapReportToDbRow(newReport));
     }
   };
 
   const handleAddComment = async (reportId: string, newComment: ReportComment) => {
-    setReports(prev => prev.map(rep => {
-      if (rep.id === reportId) {
-        const existing = rep.comments || [];
-        return {
-          ...rep,
-          comments: [newComment, ...existing]
-        };
-      }
-      return rep;
-    }));
+    setReports((prev) =>
+      prev.map((rep) => {
+        if (rep.id === reportId) {
+          const existing = rep.comments || [];
+          return {
+            ...rep,
+            comments: [newComment, ...existing]
+          };
+        }
+        return rep;
+      })
+    );
 
     if (supabase) {
       await supabase.from('report_comments').insert({
@@ -212,8 +201,8 @@ export default function App() {
   };
 
   const handleDeleteReport = async (reportId: string) => {
-    setReports(prev => {
-      const updated = prev.filter(r => r.id !== reportId);
+    setReports((prev) => {
+      const updated = prev.filter((r) => r.id !== reportId);
       localStorage.setItem('assedioaki_reports', JSON.stringify(updated));
       return updated;
     });
@@ -223,12 +212,12 @@ export default function App() {
   };
 
   const handleDeleteComment = async (reportId: string, commentId: string) => {
-    setReports(prev => {
-      const updated = prev.map(rep => {
+    setReports((prev) => {
+      const updated = prev.map((rep) => {
         if (rep.id === reportId && rep.comments) {
           return {
             ...rep,
-            comments: rep.comments.filter(c => c.id !== commentId)
+            comments: rep.comments.filter((c) => c.id !== commentId)
           };
         }
         return rep;
@@ -243,20 +232,54 @@ export default function App() {
 
   const handleSelectReportForTrack = (reportId: string) => {
     setSelectedTrackId(reportId);
-    setActiveTab('track');
+    navigateTo('track');
   };
 
   const handleNewReportAtLocation = (lat: number, lng: number, address: string) => {
     setReportLocationPreload({ lat, lng, address });
-    setActiveTab('report');
+    navigateTo('report');
+  };
+
+  const handleAddTimelineNote = async (reportId: string, note: string) => {
+    const newEvent = {
+      id: 'tl-' + Date.now(),
+      date: new Date().toISOString(),
+      title: 'Atualização registrada por você',
+      note,
+      actor: 'Usuária' as const
+    };
+
+    setReports((prev) =>
+      prev.map((r) => {
+        if (r.id === reportId) {
+          const updatedTimeline = [...r.timeline, newEvent];
+          if (supabase) {
+            supabase
+              .from('reports')
+              .update({ timeline: updatedTimeline, updated_at: new Date().toISOString() })
+              .eq('id', reportId);
+          }
+          return {
+            ...r,
+            timeline: updatedTimeline
+          };
+        }
+        return r;
+      })
+    );
   };
 
   const handleRedirectExternal = () => {
     window.location.replace('https://www.google.com');
   };
 
+  const openInfoModal = (section: MenuModalSection) => {
+    setMenuModalSection(section);
+    setIsMenuModalOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-pink-50/50 text-slate-800 font-sans selection:bg-purple-600 selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#faf8fb] text-[#261d2e] font-sans flex flex-col justify-between">
       {/* Quick Exit Mask Overlay */}
       <QuickExitMask
         isMasked={isMasked}
@@ -264,222 +287,213 @@ export default function App() {
         onRedirectExternal={handleRedirectExternal}
       />
 
-      {/* Mandatory Safe Space Declaration Modal */}
-      <SafeSpaceDeclarationModal
-        isOpen={isDeclarationOpen}
-        onAccept={() => setIsDeclarationOpen(false)}
-      />
-
-      {/* Auth Modal (Google & Email) */}
+      {/* Optional Auth Modal (kept discreet in footer, never blocking support) */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={(loggedUser) => setUser(loggedUser)}
       />
 
-      {/* Menu & Information Modal */}
+      {/* Information & Privacy Modal */}
       <MenuModal
         isOpen={isMenuModalOpen}
         initialSection={menuModalSection}
         onClose={() => setIsMenuModalOpen(false)}
         onOpenReport={() => {
           setIsMenuModalOpen(false);
-          setActiveTab('report');
+          navigateTo('report');
         }}
       />
 
-      {/* Main Top Navbar */}
+      {/* Main Navigation */}
       <Navbar
-        activeTab={activeTab === 'track' ? 'heatmap' : activeTab}
-        onSelectTab={(tab) => setActiveTab(tab)}
+        activeSection={activeSection}
+        onSelectSection={(sec) => navigateTo(sec)}
         onQuickExit={() => setIsMasked(true)}
-        user={user}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        onLogout={() => setUser(null)}
-        onOpenMenuModal={(section) => {
-          setMenuModalSection(section);
-          setIsMenuModalOpen(true);
-        }}
-        onOpenAdminPanel={() => {
-          if (user?.role === 'admin') {
-            setIsAdminPanelOpen(true);
-          } else {
-            setIsAuthOpen(true);
-          }
-        }}
       />
 
       {/* Main Container Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1 space-y-6">
-        {activeTab === 'heatmap' && (
-          <HeatmapView
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-24 lg:pb-10 w-full flex-1">
+        {activeSection === 'home' && (
+          <HomeView
+            onNavigate={(sec: AppSection) => navigateTo(sec)}
+            onOpenPrivacy={() => openInfoModal('privacy')}
+          />
+        )}
+
+        {activeSection === 'help' && (
+          <HelpNowView
             reports={reports}
             supportCenters={SUPPORT_CENTERS}
-            mode="heatmap"
             currentUser={user}
             onAddComment={handleAddComment}
             onNewReportAtLocation={handleNewReportAtLocation}
             onSelectReportForTrack={handleSelectReportForTrack}
+            onOpenReportForm={() => navigateTo('report')}
+            onBackHome={() => navigateTo('home')}
           />
         )}
 
-        {activeTab === 'locator' && (
-          <HeatmapView
+        {activeSection === 'understand' && (
+          <UnderstandView
             reports={reports}
             supportCenters={SUPPORT_CENTERS}
-            mode="locator"
             currentUser={user}
             onAddComment={handleAddComment}
             onNewReportAtLocation={handleNewReportAtLocation}
             onSelectReportForTrack={handleSelectReportForTrack}
+            onGoToTalk={() => navigateTo('talk')}
+            onBackHome={() => navigateTo('home')}
           />
         )}
 
-        {activeTab === 'report' && (
+        {activeSection === 'talk' && (
+          <TalkSupportView
+            supportCenters={SUPPORT_CENTERS}
+            onBackHome={() => navigateTo('home')}
+          />
+        )}
+
+        {activeSection === 'rights' && (
+          <RightsView
+            reports={reports}
+            selectedTrackId={selectedTrackId}
+            onOpenReportForm={() => navigateTo('report')}
+            onAddTimelineNote={handleAddTimelineNote}
+            onBackHome={() => navigateTo('home')}
+          />
+        )}
+
+        {activeSection === 'map' && (
+          <div className="max-w-6xl mx-auto space-y-4">
+            <button
+              type="button"
+              onClick={() => navigateTo('home')}
+              className="min-h-[44px] px-3 py-2 -ml-3 rounded-xl text-sm font-medium text-[#5b3d6e] hover:bg-[#f3eef8] transition-colors cursor-pointer"
+            >
+              ← Voltar para o início
+            </button>
+            <HeatmapView
+              reports={reports}
+              supportCenters={SUPPORT_CENTERS}
+              mode="heatmap"
+              currentUser={user}
+              onAddComment={handleAddComment}
+              onNewReportAtLocation={handleNewReportAtLocation}
+              onSelectReportForTrack={handleSelectReportForTrack}
+            />
+          </div>
+        )}
+
+        {activeSection === 'track' && (
+          <div className="max-w-4xl mx-auto space-y-4">
+            <button
+              type="button"
+              onClick={() => navigateTo('home')}
+              className="min-h-[44px] px-3 py-2 -ml-3 rounded-xl text-sm font-medium text-[#5b3d6e] hover:bg-[#f3eef8] transition-colors cursor-pointer"
+            >
+              ← Voltar para o início
+            </button>
+            <CaseTracker
+              reports={reports}
+              initialProtocolId={selectedTrackId}
+              onAddTimelineNote={handleAddTimelineNote}
+            />
+          </div>
+        )}
+
+        {activeSection === 'report' && (
           <ReportFormModal
             user={user}
             initialLat={reportLocationPreload.lat}
             initialLng={reportLocationPreload.lng}
             initialAddress={reportLocationPreload.address}
             onSubmitSuccess={handleAddNewReport}
-            onCancel={() => setActiveTab('heatmap')}
+            onCancel={() => navigateTo('home')}
             onEmergencyExit={() => setIsMasked(true)}
+            onGoToTrack={(protocolId) => handleSelectReportForTrack(protocolId)}
           />
-        )}
-
-        {activeTab === 'track' && (
-          <CaseTracker
-            reports={reports}
-            initialProtocolId={selectedTrackId}
-            onAddTimelineNote={async (reportId, note) => {
-              const newEvent = {
-                id: 'tl-' + Date.now(),
-                date: new Date().toISOString(),
-                title: 'Atualização da Usuária',
-                note,
-                actor: 'Usuária' as const
-              };
-
-              setReports(prev => prev.map(r => {
-                if (r.id === reportId) {
-                  const updatedTimeline = [...r.timeline, newEvent];
-                  if (supabase) {
-                    supabase.from('reports').update({ timeline: updatedTimeline, updated_at: new Date().toISOString() }).eq('id', reportId);
-                  }
-                  return {
-                    ...r,
-                    timeline: updatedTimeline
-                  };
-                }
-                return r;
-              }));
-            }}
-          />
-        )}
-
-        {activeTab === 'authorities' && (
-          <AuthoritiesForwarding reports={reports} />
-        )}
-
-        {activeTab === 'support' && (
-          <SupportInstitutions />
         )}
       </main>
 
-      {/* Botão Móvel / Flutuante em Vermelho para Registrar Denúncia */}
-      <FloatingReportButton
-        isVisible={activeTab !== 'report' && !isMasked && !isDeclarationOpen}
-        onOpenReport={() => setActiveTab('report')}
-      />
-
-      {/* Footer */}
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 w-full mt-6 mb-8 text-center text-xs text-slate-500">
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 sm:p-7 space-y-4 flex flex-col items-center justify-center text-center">
-          <div className="flex items-center justify-center gap-2.5 text-purple-950 font-bold">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 p-0.5 shadow-xs flex items-center justify-center overflow-hidden shrink-0">
-              <img 
-                src={appLogo} 
-                alt="Logo AssédioAki" 
-                className="w-full h-full object-cover rounded-full bg-white"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <div className="flex flex-col text-left items-start">
-              <span className="font-extrabold text-slate-900 text-sm leading-tight">AssédioAki</span>
-              <span className="text-[10px] text-purple-700 font-semibold leading-tight">Denúncias de Assédio</span>
-              <span className="text-[10px] text-purple-700 font-semibold leading-tight">em Santa Catarina</span>
+      {/* Calm Institutional & Privacy Footer */}
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 w-full mb-20 lg:mb-8">
+        <div className="bg-white border border-[#e6dfee] rounded-2xl p-6 sm:p-7 space-y-4 text-center">
+          <div className="flex items-center justify-center gap-2.5">
+            <img
+              src={appLogo}
+              alt=""
+              className="w-9 h-9 rounded-full object-cover border border-[#e6dfee] shrink-0"
+              referrerPolicy="no-referrer"
+            />
+            <div className="text-left">
+              <span className="font-heading font-semibold text-[#261d2e] text-sm block leading-tight">
+                Assédio Aki
+              </span>
+              <span className="text-xs text-[#5a4e66] block leading-tight">
+                Apoio e orientação em Santa Catarina
+              </span>
             </div>
           </div>
 
-          <div className="text-center space-y-1.5 max-w-2xl mx-auto">
-            <p className="text-slate-600 text-xs italic text-center">
-              "Esta plataforma é um espaço seguro voltado ao acolhimento de mulheres e vítimas de violência de gênero."
-            </p>
-            <p className="text-xs text-purple-950 font-medium text-center">
-              <strong className="text-slate-900 font-extrabold">190</strong> (Polícia Militar) e Denúncia Anônima <strong className="text-slate-900 font-extrabold">181</strong> ou pelo WhatsApp no <strong className="text-emerald-700 font-extrabold">(48) 98844-0083</strong> (Polícia Civil de Santa Catarina).
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm text-[#5a4e66] max-w-2xl mx-auto">
+            Em perigo imediato, ligue <strong className="text-[#261d2e]">190</strong>. Para apoio gratuito à mulher 24h, ligue <strong className="text-[#261d2e]">180</strong>. Denúncia anônima em SC: <strong className="text-[#261d2e]">181</strong> ou WhatsApp <strong className="text-[#261d2e]">(48) 98844-0083</strong>.
+          </p>
 
-          <div className="w-full pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 text-xs text-center">
-            <button 
-              onClick={() => { setMenuModalSection('identify'); setIsMenuModalOpen(true); }} 
-              className="font-bold text-slate-800 hover:text-purple-700 transition-colors cursor-pointer"
+          <div className="pt-4 border-t border-[#efe9f4] flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+            <button
+              type="button"
+              onClick={() => openInfoModal('privacy')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
             >
-              Identifique o Tipo de Violência
+              Privacidade e limites
             </button>
-            <span className="text-slate-300 font-extrabold">•</span>
-            <button 
-              onClick={() => { setMenuModalSection('contact'); setIsMenuModalOpen(true); }} 
-              className="font-bold text-slate-800 hover:text-purple-700 transition-colors cursor-pointer"
+            <button
+              type="button"
+              onClick={() => openInfoModal('about')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
             >
-              Entre em Contato
+              Sobre o projeto
             </button>
-            <span className="text-slate-300 font-extrabold">•</span>
-            <button 
-              onClick={() => { setMenuModalSection('about'); setIsMenuModalOpen(true); }} 
-              className="font-bold text-slate-800 hover:text-purple-700 transition-colors cursor-pointer"
+            <button
+              type="button"
+              onClick={() => openInfoModal('faqs')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
             >
-              Sobre AssédioAki
+              Dúvidas frequentes
             </button>
-            <span className="text-slate-300 font-extrabold">•</span>
-            <button 
-              onClick={() => { setMenuModalSection('donate'); setIsMenuModalOpen(true); }} 
-              className="font-bold text-slate-800 hover:text-purple-700 transition-colors cursor-pointer"
+            <button
+              type="button"
+              onClick={() => navigateTo('track')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
             >
-              Doe para AssédioAki
+              Acompanhar protocolo
             </button>
-            <span className="text-slate-300 font-extrabold">•</span>
-            <button 
-              onClick={() => { setMenuModalSection('volunteer'); setIsMenuModalOpen(true); }} 
-              className="font-bold text-slate-800 hover:text-purple-700 transition-colors cursor-pointer"
+            <button
+              type="button"
+              onClick={() => openInfoModal('contact')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
             >
-              Seja Voluntário no AssédioAki
+              Contato
             </button>
-            <span className="text-slate-300 font-extrabold">•</span>
-            <button 
-              onClick={() => { setMenuModalSection('faqs'); setIsMenuModalOpen(true); }} 
-              className="font-bold text-slate-800 hover:text-purple-700 transition-colors cursor-pointer"
-            >
-              FAQs
-            </button>
-            <span className="text-slate-300 font-extrabold">•</span>
-            <button 
+            <button
+              type="button"
               onClick={() => {
                 if (user?.role === 'admin') {
                   setIsAdminPanelOpen(true);
                 } else {
                   setIsAuthOpen(true);
                 }
-              }} 
-              className="font-bold text-purple-700 hover:text-purple-950 transition-colors cursor-pointer"
+              }}
+              className="min-h-[36px] px-2 font-medium text-[#7c6f88] hover:text-[#4f3461] cursor-pointer"
             >
-              Menu do Administrador
+              {user?.role === 'admin' ? 'Painel administrativo' : 'Acesso administrativo'}
             </button>
           </div>
         </div>
       </footer>
 
-      {/* Painel Administrativo de Gestão e Logs */}
+      {/* Discreet Admin Management Panel */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}

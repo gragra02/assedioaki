@@ -3,32 +3,23 @@ import { Report, HarassmentType, LocationType, RiskLevel, User, ReportDraft } fr
 import { encryptData } from '../lib/crypto';
 import { saveReportDraft, getReportDraft, clearReportDraft } from '../lib/draftStorage';
 import { SC_CITIES_NAMES, getCityCoordinates } from '../lib/scCities';
-import { 
-  Shield, 
-  Lock, 
-  FileText, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Paperclip, 
-  AlertTriangle, 
-  CheckCircle2, 
-  UserCheck, 
-  EyeOff, 
-  Sparkles, 
-  Send, 
-  Download, 
-  ArrowRight, 
-  ArrowLeft, 
-  Zap, 
-  ShieldAlert, 
-  Play, 
-  Trash2, 
-  PauseCircle, 
-  Check, 
+import {
+  Shield,
+  Lock,
+  MapPin,
+  CheckCircle2,
+  UserCheck,
+  EyeOff,
+  Send,
+  ArrowRight,
+  ArrowLeft,
+  Play,
+  Trash2,
+  PauseCircle,
   X,
   AlertCircle,
-  HelpCircle
+  AlertTriangle,
+  FileSearch
 } from 'lucide-react';
 
 interface ReportFormModalProps {
@@ -39,6 +30,7 @@ interface ReportFormModalProps {
   onSubmitSuccess: (newReport: Report) => void;
   onCancel: () => void;
   onEmergencyExit?: () => void;
+  onGoToTrack?: (reportId: string) => void;
 }
 
 export const ReportFormModal: React.FC<ReportFormModalProps> = ({
@@ -48,7 +40,8 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
   initialAddress,
   onSubmitSuccess,
   onCancel,
-  onEmergencyExit
+  onEmergencyExit,
+  onGoToTrack
 }) => {
   const [step, setStep] = useState<number>(1);
   const [isAnonymous, setIsAnonymous] = useState<boolean>(true);
@@ -57,9 +50,9 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
   const [locationType, setLocationType] = useState<LocationType>('transporte_publico');
   const [address, setAddress] = useState<string>(initialAddress || '');
   const [city, setCity] = useState<string>('Florianópolis');
-  const [state, setState] = useState<string>('SC');
+  const [state] = useState<string>('SC');
   const [lat, setLat] = useState<number>(initialLat || -27.5954);
-  const [lng, setLng] = useState<number>(initialLng || -48.5480);
+  const [lng, setLng] = useState<number>(initialLng || -48.548);
   const [dateTime, setDateTime] = useState<string>(new Date().toISOString().slice(0, 16));
   const [periodOfDay, setPeriodOfDay] = useState<'manha' | 'tarde' | 'noite' | 'madrugada'>('noite');
   const [description, setDescription] = useState<string>('');
@@ -67,17 +60,15 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
   const [witnesses, setWitnesses] = useState<string>('');
   const [riskLevel, setRiskLevel] = useState<RiskLevel>('alto');
   const [secretPin, setSecretPin] = useState<string>('1234');
-  const [attachmentName, setAttachmentName] = useState<string>('');
+  const [attachmentName] = useState<string>('');
   const [isEncrypting, setIsEncrypting] = useState<boolean>(false);
   const [submittedReport, setSubmittedReport] = useState<Report | null>(null);
 
-  // Draft Management State
   const [savedDraftPrompt, setSavedDraftPrompt] = useState<ReportDraft | null>(null);
   const [draftSavedNotice, setDraftSavedNotice] = useState<string | null>(null);
   const [geoFeedback, setGeoFeedback] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Check for existing draft on component mount
   useEffect(() => {
     const existingDraft = getReportDraft();
     if (existingDraft) {
@@ -85,8 +76,9 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     }
   }, []);
 
-  // Helper to compile current draft data
-  const getCurrentDraftObject = (reason: 'aggressor_present' | 'quick_exit' | 'user_pause' = 'user_pause'): ReportDraft => ({
+  const getCurrentDraftObject = (
+    reason: 'aggressor_present' | 'quick_exit' | 'user_pause' = 'user_pause'
+  ): ReportDraft => ({
     savedAt: new Date().toISOString(),
     step,
     isAnonymous,
@@ -109,7 +101,6 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     reasonForPause: reason
   });
 
-  // Debounced auto-save effect to protect against accidental exit or power loss
   useEffect(() => {
     if (!submittedReport && (title.trim() || description.trim() || aggressorDetails.trim() || step > 1)) {
       const timer = setTimeout(() => {
@@ -118,28 +109,27 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
       return () => clearTimeout(timer);
     }
   }, [
-    step, 
-    isAnonymous, 
-    category, 
-    title, 
-    locationType, 
-    address, 
-    city, 
-    state, 
-    lat, 
-    lng, 
-    dateTime, 
-    periodOfDay, 
-    description, 
-    aggressorDetails, 
-    witnesses, 
-    riskLevel, 
-    secretPin, 
-    attachmentName, 
+    step,
+    isAnonymous,
+    category,
+    title,
+    locationType,
+    address,
+    city,
+    state,
+    lat,
+    lng,
+    dateTime,
+    periodOfDay,
+    description,
+    aggressorDetails,
+    witnesses,
+    riskLevel,
+    secretPin,
+    attachmentName,
     submittedReport
   ]);
 
-  // Restore draft into form fields
   const handleApplyDraft = () => {
     if (!savedDraftPrompt) return;
     setStep(savedDraftPrompt.step || 1);
@@ -149,9 +139,8 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     setLocationType(savedDraftPrompt.locationType || 'transporte_publico');
     setAddress(savedDraftPrompt.address || '');
     setCity(savedDraftPrompt.city || 'Florianópolis');
-    setState(savedDraftPrompt.state || 'SC');
     setLat(savedDraftPrompt.lat || -27.5954);
-    setLng(savedDraftPrompt.lng || -48.5480);
+    setLng(savedDraftPrompt.lng || -48.548);
     setDateTime(savedDraftPrompt.dateTime || new Date().toISOString().slice(0, 16));
     setPeriodOfDay(savedDraftPrompt.periodOfDay || 'noite');
     setDescription(savedDraftPrompt.description || '');
@@ -159,21 +148,18 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     setWitnesses(savedDraftPrompt.witnesses || '');
     setRiskLevel(savedDraftPrompt.riskLevel || 'alto');
     setSecretPin(savedDraftPrompt.secretPin || '1234');
-    setAttachmentName(savedDraftPrompt.attachmentName || '');
     setSavedDraftPrompt(null);
-    setDraftSavedNotice('Rascunho restaurado com sucesso. Você pode continuar preenchendo.');
+    setDraftSavedNotice('Rascunho restaurado. Você pode continuar de onde parou.');
     setTimeout(() => setDraftSavedNotice(null), 3500);
   };
 
-  // Discard draft completely
   const handleDiscardDraft = () => {
     clearReportDraft();
     setSavedDraftPrompt(null);
-    setDraftSavedNotice('Rascunho descartado. Iniciando formulário limpo.');
+    setDraftSavedNotice('Rascunho descartado.');
     setTimeout(() => setDraftSavedNotice(null), 3000);
   };
 
-  // Emergency safety pause (aggressor approaching)
   const handleEmergencyPause = () => {
     const draft = getCurrentDraftObject('aggressor_present');
     saveReportDraft(draft);
@@ -184,11 +170,10 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     }
   };
 
-  // Normal save and pause
   const handleNormalSaveDraft = () => {
     const draft = getCurrentDraftObject('user_pause');
     saveReportDraft(draft);
-    setDraftSavedNotice('Rascunho protegido salvo no seu dispositivo.');
+    setDraftSavedNotice('Rascunho salvo neste dispositivo.');
     setTimeout(() => {
       onCancel();
     }, 700);
@@ -201,13 +186,12 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
         (pos) => {
           setLat(pos.coords.latitude);
           setLng(pos.coords.longitude);
-          setAddress(`Localização via GPS: (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
-          setGeoFeedback('Coordenadas de GPS obtidas com sucesso.');
+          setAddress(`Localização GPS (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
+          setGeoFeedback('Localização obtida com sucesso.');
           setTimeout(() => setGeoFeedback(null), 3000);
         },
-        (err) => {
-          console.warn('Geolocation error:', err);
-          setGeoFeedback('Não foi possível obter a localização exata do GPS. Por favor, digite o endereço manualmente.');
+        () => {
+          setGeoFeedback('Não foi possível acessar o GPS. Você pode digitar o bairro ou ponto de referência.');
         }
       );
     } else {
@@ -221,11 +205,9 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     setIsEncrypting(true);
 
     try {
-      // Create Protocol ID
       const protocolId = 'ASK-2026-' + Math.floor(10000 + Math.random() * 90000);
       const userPin = secretPin.trim() || '1234';
 
-      // Sensitive Payload string
       const sensitiveDataToEncrypt = JSON.stringify({
         title,
         description,
@@ -235,17 +217,16 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
         createdAt: new Date().toISOString()
       });
 
-      // E2EE Web Crypto AES-GCM Encryption
       const encrypted = await encryptData(sensitiveDataToEncrypt, userPin);
 
       const newReport: Report = {
         id: protocolId,
         accessKey: userPin,
         isAnonymous,
-        title: title || 'Denúncia sem título',
+        title: title || 'Relato sem título',
         category,
         locationType,
-        address: address || 'Endereço não informado',
+        address: address || 'Local não informado',
         city,
         state,
         lat,
@@ -257,7 +238,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
         witnesses,
         riskLevel,
         status: 'registrada',
-        forwardDestination: 'Central 180 / Delegacia Eletrônica',
+        forwardDestination: 'Central 180 / Delegacia Virtual SC',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         encryptedPayload: JSON.stringify(encrypted),
@@ -266,356 +247,301 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
           {
             id: 'tl-' + Date.now(),
             date: new Date().toISOString(),
-            title: 'Denúncia Criptografada e Registrada',
-            note: `Gravada sob protocolo exclusivo com criptografia AES-GCM (SHA-256: ${encrypted.hash.slice(0, 12)}...)`,
+            title: 'Relato salvo no aplicativo',
+            note: `Registrado com protocolo ${protocolId} e proteção AES-GCM (hash ${encrypted.hash.slice(0, 12)}...).`,
             actor: 'Sistema AssédioAki'
           }
         ],
-        attachments: attachmentName ? [
-          {
-            id: 'att-1',
-            name: attachmentName,
-            size: '1.8 MB',
-            type: 'image/jpeg'
-          }
-        ] : []
+        attachments: attachmentName
+          ? [
+              {
+                id: 'att-1',
+                name: attachmentName,
+                size: '1.8 MB',
+                type: 'image/jpeg'
+              }
+            ]
+          : []
       };
 
-      // Clear draft once submitted successfully
       clearReportDraft();
-
       setSubmittedReport(newReport);
       onSubmitSuccess(newReport);
-    } catch (err) {
-      console.error(err);
-      setSubmitError('Erro ao processar a denúncia com criptografia. Verifique os dados e tente novamente.');
+    } catch {
+      setSubmitError('Não foi possível salvar o relato agora. Revise os campos e tente novamente.');
     } finally {
       setIsEncrypting(false);
     }
   };
 
   return (
-    <div className="bg-slate-900 border border-purple-900/40 rounded-2xl max-w-3xl mx-auto p-5 sm:p-8 shadow-2xl shadow-purple-950/40 space-y-6">
-      {/* Header with Safety Pause Triggers */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-purple-500/10 text-pink-400 rounded-xl border border-purple-500/20">
-            <Shield className="w-6 h-6" />
+    <div className="bg-white border border-[#e6dfee] rounded-2xl max-w-3xl mx-auto p-5 sm:p-8 space-y-6">
+      {/* Header with Pause & Quick Disguise */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#efe9f4] pb-4">
+        <div className="flex items-start gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#f3eef8] text-[#6d4c82] flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white font-heading">
-              Registro Seguro de Denúncia
-            </h2>
-            <p className="text-xs text-slate-400">
-              Criptografia E2EE • Rascunho com Salvamento Protetivo
+            <h1 className="text-xl font-semibold text-[#261d2e] font-heading">
+              Registrar relato neste aplicativo
+            </h1>
+            <p className="text-xs sm:text-sm text-[#5a4e66]">
+              Rascunho salvo localmente enquanto você preenche · Não substitui B.O. policial
             </p>
           </div>
         </div>
 
-        {/* Safety & Pause Buttons Bar */}
         <div className="flex items-center gap-2 flex-wrap">
           {!submittedReport && (
             <>
-              {/* Emergency Interruption Button */}
-              <button 
+              <button
                 type="button"
                 onClick={handleEmergencyPause}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md animate-pulse hover:animate-none cursor-pointer border border-rose-500"
-                title="Pausar e esconder imediatamente a tela devido à presença ou aproximação do agressor"
+                className="min-h-[44px] px-3.5 py-2 bg-[#fbf2f4] hover:bg-[#f4dfe5] text-[#7f3347] font-semibold text-xs rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer border border-[#e7cbd3]"
+                title="Salvar rascunho e disfarçar tela imediatamente"
               >
-                <Zap className="w-3.5 h-3.5 fill-current" />
-                <span className="hidden sm:inline">Interromper por Segurança (Agressor Próximo)</span>
-                <span className="sm:hidden">Interromper (Agressor)</span>
+                <EyeOff className="w-4 h-4" aria-hidden="true" />
+                <span>Pausar e disfarçar tela</span>
               </button>
 
-              {/* Normal Save & Pause */}
-              <button 
+              <button
                 type="button"
                 onClick={handleNormalSaveDraft}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-purple-300 hover:text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
-                title="Salvar rascunho seguro e continuar mais tarde"
+                className="min-h-[44px] px-3.5 py-2 bg-[#faf8fb] hover:bg-[#f3eef8] text-[#4f3461] text-xs font-medium rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer border border-[#e6dfee]"
               >
-                <PauseCircle className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Pausar e Salvar Rascunho</span>
-                <span className="sm:hidden">Pausar</span>
+                <PauseCircle className="w-4 h-4" aria-hidden="true" />
+                <span>Salvar rascunho</span>
               </button>
             </>
           )}
 
-          <button 
+          <button
             type="button"
             onClick={onCancel}
-            className="text-xs text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+            className="min-h-[44px] px-3.5 py-2 text-xs font-medium text-[#5a4e66] hover:text-[#261d2e] bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] rounded-xl transition-colors cursor-pointer"
           >
-            Fechar
+            Voltar
           </button>
         </div>
       </div>
 
-      {/* Draft Saved Feedback Toast */}
       {draftSavedNotice && (
-        <div className="p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-xs text-emerald-300 flex items-center justify-between animate-in fade-in duration-200">
+        <div className="p-3 bg-[#f1f6f3] border border-[#cde0d4] rounded-xl text-xs sm:text-sm text-[#26543b] flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>{draftSavedNotice}</span>
           </div>
-          <button onClick={() => setDraftSavedNotice(null)} className="text-emerald-400 hover:text-white">
-            <X className="w-3.5 h-3.5" />
+          <button
+            type="button"
+            onClick={() => setDraftSavedNotice(null)}
+            aria-label="Fechar aviso"
+            className="min-w-[36px] min-h-[36px] flex items-center justify-center cursor-pointer"
+          >
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       )}
 
-      {/* Recover Interrupted Draft Card (Shown when an interrupted draft is detected) */}
       {savedDraftPrompt && !submittedReport && (
-        <div className="p-4 bg-gradient-to-r from-purple-950/90 via-slate-900 to-purple-950/90 border border-purple-500/60 rounded-xl space-y-3 animate-in fade-in duration-200 shadow-xl">
+        <div className="p-4 sm:p-5 bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl space-y-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2.5 bg-pink-500/20 text-pink-400 rounded-xl border border-pink-500/30">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
-                  <span>Rascunho de Denúncia Interrompido</span>
-                  <span className="text-[10px] bg-purple-900 text-purple-200 px-2 py-0.5 rounded font-mono border border-purple-700">
-                    Etapa {savedDraftPrompt.step} de 4
-                  </span>
-                  {savedDraftPrompt.reasonForPause === 'aggressor_present' && (
-                    <span className="text-[10px] bg-rose-950 text-rose-300 px-2 py-0.5 rounded border border-rose-800 font-bold">
-                      Interrompido por Segurança
-                    </span>
-                  )}
-                </h4>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Salvo em {new Date(savedDraftPrompt.savedAt).toLocaleString('pt-BR')} • {savedDraftPrompt.title || 'Denúncia em andamento'}
-                </p>
-              </div>
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-[#261d2e]">
+                Você tem um rascunho salvo ({`Etapa ${savedDraftPrompt.step} de 4`})
+              </h2>
+              <p className="text-xs text-[#5a4e66]">
+                Salvo em {new Date(savedDraftPrompt.savedAt).toLocaleString('pt-BR')} · {savedDraftPrompt.title || 'Relato em andamento'}
+              </p>
             </div>
-
-            <button 
-              onClick={() => setSavedDraftPrompt(null)} 
-              className="text-slate-400 hover:text-white p-1 cursor-pointer"
-              title="Fechar aviso"
+            <button
+              type="button"
+              onClick={() => setSavedDraftPrompt(null)}
+              aria-label="Fechar aviso de rascunho"
+              className="min-w-[36px] min-h-[36px] flex items-center justify-center text-[#5a4e66] hover:text-[#261d2e] cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
-          <p className="text-xs text-purple-200/90 leading-relaxed">
-            Identificamos que você precisou pausar o preenchimento anteriormente por receio ou segurança. Todos os seus relatos e detalhes digitados foram guardados em sigilo no seu navegador.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleApplyDraft}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-all shadow-md cursor-pointer"
+              className="min-h-[44px] px-4 py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-xs sm:text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Retomar Denúncia de Onde Parei</span>
+              <Play className="w-4 h-4" aria-hidden="true" />
+              <span>Continuar rascunho</span>
             </button>
 
             <button
               type="button"
               onClick={handleDiscardDraft}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700/60"
+              className="min-h-[44px] px-3.5 py-2 bg-white hover:bg-[#fbf2f4] text-[#5a4e66] hover:text-[#7f3347] text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer border border-[#e6dfee]"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Descartar Rascunho</span>
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
+              <span>Descartar</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Geolocation feedback if any */}
       {geoFeedback && (
-        <div className="p-3 bg-slate-950 border border-purple-800/50 rounded-xl text-xs text-purple-200 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-purple-400 shrink-0" />
+        <div className="p-3 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl text-xs sm:text-sm text-[#4f3461] flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>{geoFeedback}</span>
         </div>
       )}
 
-      {/* Submit error feedback if any */}
       {submitError && (
-        <div className="p-3 bg-rose-950/80 border border-rose-800 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
+        <div className="p-3 bg-[#fbf2f4] border border-[#e7cbd3] rounded-xl text-xs sm:text-sm text-[#7f3347] flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>{submitError}</span>
         </div>
       )}
 
       {!submittedReport ? (
         <form onSubmit={handleFormSubmit} className="space-y-6">
-          {/* Step Progress Bar with safety hint */}
+          {/* Progress Bar */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
-              <span className={step >= 1 ? 'text-purple-400' : ''}>1. Modalidade</span>
-              <span className={step >= 2 ? 'text-purple-400' : ''}>2. Local & Data</span>
-              <span className={step >= 3 ? 'text-purple-400' : ''}>3. Relato</span>
-              <span className={step >= 4 ? 'text-purple-400' : ''}>4. Criptografia</span>
+            <div className="grid grid-cols-4 gap-2 text-xs font-medium text-[#6b5e77]">
+              <span className={step >= 1 ? 'text-[#6d4c82] font-semibold' : ''}>1. Tipo</span>
+              <span className={step >= 2 ? 'text-[#6d4c82] font-semibold' : ''}>2. Local e data</span>
+              <span className={step >= 3 ? 'text-[#6d4c82] font-semibold' : ''}>3. Relato</span>
+              <span className={step >= 4 ? 'text-[#6d4c82] font-semibold' : ''}>4. Proteção</span>
             </div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300"
+            <div className="w-full bg-[#efe9f4] h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-[#6d4c82] h-full transition-all duration-300"
                 style={{ width: `${(step / 4) * 100}%` }}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-500">
-              <span>Seus dados são salvos em segundo plano continuamente.</span>
-              <span className="text-purple-400 font-medium">Teclando ESC ativa o disfarce imediato.</span>
-            </div>
           </div>
 
-          {/* STEP 1: Modalidade & Tipo */}
+          {/* STEP 1 */}
           {step === 1 && (
-            <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  Escolha a Modalidade do Relato
-                </label>
+                <span className="block text-xs font-semibold text-[#261d2e] mb-2">
+                  Como prefere registrar
+                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
+                  <button
+                    type="button"
                     onClick={() => setIsAnonymous(true)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      isAnonymous 
-                        ? 'bg-purple-950/60 border-purple-500 text-white shadow-md' 
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    aria-pressed={isAnonymous}
+                    className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${
+                      isAnonymous
+                        ? 'bg-[#f3eef8] border-[#6d4c82] text-[#261d2e] ring-1 ring-[#6d4c82]'
+                        : 'bg-[#faf8fb] border-[#e6dfee] text-[#5a4e66]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
-                      <EyeOff className="w-4 h-4 text-pink-400" />
-                      <span>100% Anônimo</span>
+                    <div className="flex items-center gap-2 font-semibold text-sm text-[#261d2e]">
+                      <EyeOff className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
+                      <span>Sem identificação (anônimo)</span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Nenhum dado pessoal, nome ou e-mail será associado ao protocolo.
+                    <p className="text-xs text-[#5a4e66] mt-1">
+                      Nenhum nome ou e-mail pessoal será ligado ao protocolo.
                     </p>
-                  </div>
+                  </button>
 
-                  <div
+                  <button
+                    type="button"
                     onClick={() => setIsAnonymous(false)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      !isAnonymous 
-                        ? 'bg-purple-950/60 border-purple-500 text-white shadow-md' 
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    aria-pressed={!isAnonymous}
+                    className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${
+                      !isAnonymous
+                        ? 'bg-[#f3eef8] border-[#6d4c82] text-[#261d2e] ring-1 ring-[#6d4c82]'
+                        : 'bg-[#faf8fb] border-[#e6dfee] text-[#5a4e66]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
-                      <UserCheck className="w-4 h-4 text-purple-400" />
-                      <span>Identificado com Sigilo</span>
+                    <div className="flex items-center gap-2 font-semibold text-sm text-[#261d2e]">
+                      <UserCheck className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
+                      <span>Associado ao meu perfil local</span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Seu cadastro facilitará o acompanhamento direto de acolhimento.
+                    <p className="text-xs text-[#5a4e66] mt-1">
+                      Útil apenas se você entrou com um perfil opcional.
                     </p>
-                  </div>
+                  </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  Tipo de Infração / Violência
-                </label>
+                <span className="block text-xs font-semibold text-[#261d2e] mb-2">
+                  O que aconteceu (escolha a opção mais próxima)
+                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setCategory('importunacao_sexual')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      category === 'importunacao_sexual'
-                        ? 'bg-purple-950/70 border-purple-500 text-white shadow-sm ring-1 ring-purple-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block text-purple-300">Importunação Sexual</span>
-                    <span className="text-[11px] text-slate-400 block mt-1">
-                      Toques não autorizados, beijos forçados, masturbação pública (Lei 13.718/18).
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCategory('assedio_sexual')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      category === 'assedio_sexual'
-                        ? 'bg-purple-950/70 border-purple-500 text-white shadow-sm ring-1 ring-purple-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block text-purple-300">Assédio Sexual</span>
-                    <span className="text-[11px] text-slate-400 block mt-1">
-                      Chantagem, favores sexuais em relação de trabalho ou subordinação (Art. 216-A).
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCategory('assedio_moral')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      category === 'assedio_moral'
-                        ? 'bg-purple-950/70 border-purple-500 text-white shadow-sm ring-1 ring-purple-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block text-purple-300">Assédio Moral</span>
-                    <span className="text-[11px] text-slate-400 block mt-1">
-                      Humilhação reiterada, perseguição sistemática, constrangimento no ambiente laboral.
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCategory('perseguicao')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      category === 'perseguicao'
-                        ? 'bg-purple-950/70 border-purple-500 text-white shadow-sm ring-1 ring-purple-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block text-purple-300">Perseguição (Stalking)</span>
-                    <span className="text-[11px] text-slate-400 block mt-1">
-                      Perseguição reiterada física ou online, vigília, ameaça ou invasão de privacidade (Art. 147-A).
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCategory('violencia_psicologica')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      category === 'violencia_psicologica'
-                        ? 'bg-purple-950/70 border-purple-500 text-white shadow-sm ring-1 ring-purple-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block text-purple-300">Violência Psicológica</span>
-                    <span className="text-[11px] text-slate-400 block mt-1">
-                      Dano emocional, controle, humilhação, isolamento, manipulação ou ameaças (Art. 147-B).
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCategory('violencia_virtual')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      category === 'violencia_virtual'
-                        ? 'bg-purple-950/70 border-purple-500 text-white shadow-sm ring-1 ring-purple-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block text-purple-300">Violência Virtual / Nudez</span>
-                    <span className="text-[11px] text-slate-400 block mt-1">
-                      Divulgação não consentida de fotos íntimas, sextorsão, vazamento e cyberbullying (Art. 218-C).
-                    </span>
-                  </button>
+                  {(
+                    [
+                      {
+                        id: 'importunacao_sexual',
+                        title: 'Importunação sexual',
+                        desc: 'Toques sem consentimento, beijos forçados ou atos em público.'
+                      },
+                      {
+                        id: 'assedio_sexual',
+                        title: 'Assédio sexual',
+                        desc: 'Chantagem ou pressão sexual em relação de trabalho ou ensino.'
+                      },
+                      {
+                        id: 'assedio_moral',
+                        title: 'Assédio moral',
+                        desc: 'Humilhações repetidas, gritos ou isolamento no trabalho.'
+                      },
+                      {
+                        id: 'perseguicao',
+                        title: 'Perseguição (Stalking)',
+                        desc: 'Vigília constante, mensagens insistentes ou perseguição.'
+                      },
+                      {
+                        id: 'violencia_psicologica',
+                        title: 'Violência psicológica',
+                        desc: 'Ameaças, controle, manipulação ou intimidação emocional.'
+                      },
+                      {
+                        id: 'violencia_virtual',
+                        title: 'Violência virtual',
+                        desc: 'Ameaça ou divulgação de fotos íntimas e ataques online.'
+                      }
+                    ] as const
+                  ).map((item) => {
+                    const isSelected = category === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setCategory(item.id)}
+                        aria-pressed={isSelected}
+                        className={`p-3.5 rounded-xl border text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#f3eef8] border-[#6d4c82] text-[#261d2e] ring-1 ring-[#6d4c82]'
+                            : 'bg-[#faf8fb] hover:bg-[#f3eef8]/50 border-[#e6dfee] text-[#493d54]'
+                        }`}
+                      >
+                        <span className="text-xs sm:text-sm font-semibold block text-[#261d2e]">
+                          {item.title}
+                        </span>
+                        <span className="text-xs text-[#5a4e66] block mt-1 leading-snug">
+                          {item.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Título Resumido do Caso
+                <label htmlFor="report-title-input" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Resumo curto da situação
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  id="report-title-input"
+                  type="text"
                   required
-                  placeholder="Ex: Importunação dentro do ônibus Linha TICEN / Beira-Mar..."
+                  placeholder="Ex: Abordagem insistente no ponto de ônibus do Centro"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
                 />
               </div>
 
@@ -624,71 +550,71 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                   type="button"
                   disabled={!title.trim()}
                   onClick={() => setStep(2)}
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-5 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <span>Próximo Passo</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Próximo passo</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 2: Local & Horário */}
+          {/* STEP 2 */}
           {step === 2 && (
-            <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Tipo de Local do Ocorrido
+                <label htmlFor="report-location-type" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Tipo de ambiente
                 </label>
                 <select
+                  id="report-location-type"
                   value={locationType}
                   onChange={(e) => setLocationType(e.target.value as LocationType)}
-                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
                 >
-                  <option value="transporte_publico">🚌 Transporte Público (Ônibus, Metrô, Terminal)</option>
-                  <option value="via_publica">🛣️ Via Pública (Rua, Calçada, Praça)</option>
-                  <option value="trabalho">🏢 Ambiente de Trabalho / Empresa</option>
-                  <option value="escola_universidade">🎓 Escola / Universidade</option>
-                  <option value="evento_festa">🎉 Evento, Festa, Show ou Balada</option>
-                  <option value="internet">🌐 Ambiente Virtual / Internet</option>
-                  <option value="local_privado">🏠 Local Privado / Residência</option>
-                  <option value="outro">📍 Outro Local</option>
+                  <option value="transporte_publico">Transporte público (ônibus, terminal)</option>
+                  <option value="via_publica">Via pública (rua, praça, calçada)</option>
+                  <option value="trabalho">Ambiente de trabalho</option>
+                  <option value="escola_universidade">Escola ou universidade</option>
+                  <option value="evento_festa">Evento, festa ou show</option>
+                  <option value="internet">Ambiente virtual / redes sociais</option>
+                  <option value="local_privado">Local privado / residência</option>
+                  <option value="outro">Outro local</option>
                 </select>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    Endereço ou Ponto de Referência
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <label htmlFor="report-address-input" className="block text-xs font-semibold text-[#261d2e]">
+                    Bairro, rua aproximada ou ponto de referência
                   </label>
                   <button
                     type="button"
                     onClick={handleFetchCurrentLocation}
-                    className="text-[11px] text-purple-400 hover:text-purple-300 flex items-center gap-1 cursor-pointer font-semibold"
+                    className="min-h-[36px] text-xs text-[#6d4c82] hover:underline inline-flex items-center gap-1 cursor-pointer font-semibold"
                   >
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Usar Minha Localização GPS</span>
+                    <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Usar localização aproximada (GPS)</span>
                   </button>
                 </div>
-                <input 
-                  type="text" 
+                <input
+                  id="report-address-input"
+                  type="text"
                   required
-                  placeholder="Ex: Av. Mauro Ramos, próximo ao Ponto de Ônibus 14..."
+                  placeholder="Evite colocar o número exato da sua casa; prefira rua ou referência próxima"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-300">
-                      Cidade (Santa Catarina)
-                    </label>
-                    <span className="text-[10px] text-purple-400 font-bold">295 Municípios</span>
-                  </div>
-                  <select 
+                  <label htmlFor="report-city-select" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                    Município em Santa Catarina
+                  </label>
+                  <select
+                    id="report-city-select"
                     value={city}
                     onChange={(e) => {
                       const newCity = e.target.value;
@@ -697,42 +623,25 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                       setLat(coords[0]);
                       setLng(coords[1]);
                     }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                    className="w-full min-h-[44px] px-3 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e] cursor-pointer"
                   >
-                    {SC_CITIES_NAMES.map(cName => (
-                      <option key={cName} value={cName} className="bg-slate-900 text-white">
+                    {SC_CITIES_NAMES.map((cName) => (
+                      <option key={cName} value={cName}>
                         {cName} (SC)
                       </option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Estado</label>
-                  <input 
-                    type="text" 
-                    value={state}
-                    disabled
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-400 cursor-not-allowed"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Data e Hora Aproximada</label>
-                  <input 
-                    type="datetime-local" 
-                    value={dateTime}
-                    onChange={(e) => setDateTime(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Período do Dia</label>
+                  <label htmlFor="report-period-select" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                    Período do dia
+                  </label>
                   <select
+                    id="report-period-select"
                     value={periodOfDay}
                     onChange={(e) => setPeriodOfDay(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                    className="w-full min-h-[44px] px-3 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
                   >
                     <option value="manha">Manhã (06h às 12h)</option>
                     <option value="tarde">Tarde (12h às 18h)</option>
@@ -742,155 +651,137 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                 </div>
               </div>
 
+              <div>
+                <label htmlFor="report-datetime" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Data e hora aproximada
+                </label>
+                <input
+                  id="report-datetime"
+                  type="datetime-local"
+                  value={dateTime}
+                  onChange={(e) => setDateTime(e.target.value)}
+                  className="w-full sm:w-72 min-h-[44px] px-3 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
+                />
+              </div>
+
               <div className="flex justify-between pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs flex items-center gap-2 cursor-pointer"
+                  className="min-h-[44px] px-4 py-2 bg-[#faf8fb] hover:bg-[#f3eef8] text-[#4f3461] border border-[#e6dfee] rounded-xl text-sm font-medium inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                   <span>Voltar</span>
                 </button>
                 <button
                   type="button"
                   disabled={!address.trim()}
                   onClick={() => setStep(3)}
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-5 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <span>Próximo Passo</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Próximo passo</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 3: Relato & Fatos */}
+          {/* STEP 3 */}
           {step === 3 && (
-            <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Descrição Circunstanciada dos Fatos
+                <label htmlFor="report-description" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Descreva o que aconteceu (no seu ritmo)
                 </label>
-                <p className="text-[11px] text-slate-400 mb-1.5">
-                  Descreva o que ocorreu com o máximo de detalhes que se sentir confortável em relatar.
-                </p>
-                <textarea 
+                <textarea
+                  id="report-description"
                   rows={4}
                   required
-                  placeholder="Descreva a sequência dos acontecimentos, falas, abordagens e reações..."
+                  placeholder="Conte apenas o que se sentir confortável em registrar..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 leading-relaxed"
+                  className="w-full p-3.5 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e] leading-relaxed"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Características do Agressor (Opcional)
+                <label htmlFor="report-aggressor" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Características de quem praticou (opcional)
                 </label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: Altura aproximada, cor de camisa, tatuagens, apelido ou vínculo..."
+                <input
+                  id="report-aggressor"
+                  type="text"
+                  placeholder="Ex: roupas, placa, função no local ou vínculo"
                   value={aggressorDetails}
                   onChange={(e) => setAggressorDetails(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Testemunhas ou Pessoas que Presenciaram (Opcional)
+                <label htmlFor="report-witnesses" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Testemunhas ou câmeras próximas (opcional)
                 </label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: Cobrador do ônibus, colegas de trabalho, motorista..."
+                <input
+                  id="report-witnesses"
+                  type="text"
+                  placeholder="Ex: motorista, colegas, câmeras da rua"
                   value={witnesses}
                   onChange={(e) => setWitnesses(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                  <span>Selecione o nível de gravidade da ocorrência:</span>
-                  <span className="text-[10px] text-purple-300 font-normal">Passe o cursor sobre os níveis para ver a orientação</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  {/* Baixo */}
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      onClick={() => setRiskLevel('baixo')}
-                      className={`w-full py-2.5 px-2 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        riskLevel === 'baixo' || riskLevel === 'leve' 
-                          ? 'bg-blue-900/60 text-blue-200 border-blue-400 ring-2 ring-blue-500/50 shadow-md' 
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                      title="Relatos de comentários isolados ou situações de desconforto único, onde a orientação preventiva ou escuta é suficiente."
-                    >
-                      <span>🔵 Baixo</span>
-                      <HelpCircle className="w-3.5 h-3.5 text-blue-400 opacity-80" />
-                    </button>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-64 text-center animate-in fade-in zoom-in-95 duration-150">
-                      <div className="bg-slate-950 text-white text-[11px] rounded-xl p-2.5 shadow-2xl border border-slate-700 leading-snug">
-                        <strong className="text-blue-400 block mb-0.5 font-bold">🔵 Nível Baixo:</strong>
-                        Relatos de comentários isolados ou situações de desconforto único, onde a orientação preventiva ou escuta é suficiente.
-                      </div>
-                      <div className="w-2.5 h-2.5 bg-slate-950 border-b border-r border-slate-700 rotate-45 -mt-1.5" />
-                    </div>
-                  </div>
+                <span className="block text-xs font-semibold text-[#261d2e] mb-2">
+                  Nível de gravidade percebido
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {(
+                    [
+                      {
+                        id: 'baixo',
+                        label: 'Baixo',
+                        desc: 'Comentário ou abordagem isolada.'
+                      },
+                      {
+                        id: 'medio',
+                        label: 'Médio',
+                        desc: 'Situação repetida ou constrangimento contínuo.'
+                      },
+                      {
+                        id: 'grave',
+                        label: 'Grave',
+                        desc: 'Contato físico, ameaça direta ou perseguição.'
+                      }
+                    ] as const
+                  ).map((lvl) => {
+                    const isSelected =
+                      lvl.id === 'grave'
+                        ? riskLevel === 'grave' || riskLevel === 'alto' || riskLevel === 'urgente'
+                        : lvl.id === 'medio'
+                          ? riskLevel === 'medio' || riskLevel === 'moderado'
+                          : riskLevel === 'baixo' || riskLevel === 'leve';
 
-                  {/* Médio */}
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      onClick={() => setRiskLevel('medio')}
-                      className={`w-full py-2.5 px-2 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        riskLevel === 'medio' || riskLevel === 'moderado' 
-                          ? 'bg-amber-900/60 text-amber-200 border-amber-400 ring-2 ring-amber-500/50 shadow-md' 
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                      title="Envolve assédio verbal recorrente, constrangimento no ambiente de trabalho/estudo ou condutas inapropiadas repetidas"
-                    >
-                      <span>🟡 Médio</span>
-                      <HelpCircle className="w-3.5 h-3.5 text-amber-400 opacity-80" />
-                    </button>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-64 text-center animate-in fade-in zoom-in-95 duration-150">
-                      <div className="bg-slate-950 text-white text-[11px] rounded-xl p-2.5 shadow-2xl border border-slate-700 leading-snug">
-                        <strong className="text-amber-400 block mb-0.5 font-bold">🟡 Nível Médio:</strong>
-                        Envolve assédio verbal recorrente, constrangimento no ambiente de trabalho/estudo ou condutas inapropiadas repetidas.
-                      </div>
-                      <div className="w-2.5 h-2.5 bg-slate-950 border-b border-r border-slate-700 rotate-45 -mt-1.5" />
-                    </div>
-                  </div>
-
-                  {/* Grave */}
-                  <div className="relative group">
-                    <button
-                      type="button"
-                      onClick={() => setRiskLevel('grave')}
-                      className={`w-full py-2.5 px-2 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                        riskLevel === 'grave' || riskLevel === 'urgente' || riskLevel === 'alto' 
-                          ? 'bg-rose-900/60 text-rose-200 border-rose-400 ring-2 ring-rose-500/50 shadow-md' 
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                      title="Envolve violência física, ameaça direta, coerção ou reincidência insistente (ex: stalking ou chantagem)"
-                    >
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                      <span>🔴 Grave</span>
-                      <HelpCircle className="w-3.5 h-3.5 text-rose-400 opacity-80" />
-                    </button>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-64 text-center animate-in fade-in zoom-in-95 duration-150">
-                      <div className="bg-slate-950 text-white text-[11px] rounded-xl p-2.5 shadow-2xl border border-slate-700 leading-snug">
-                        <strong className="text-rose-400 block mb-0.5 font-bold">🔴 Nível Grave:</strong>
-                        Envolve violência física, ameaça direta, coerção ou reincidência insistente (ex: stalking ou chantagem).
-                      </div>
-                      <div className="w-2.5 h-2.5 bg-slate-950 border-b border-r border-slate-700 rotate-45 -mt-1.5" />
-                    </div>
-                  </div>
+                    return (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => setRiskLevel(lvl.id)}
+                        aria-pressed={isSelected}
+                        className={`p-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? lvl.id === 'grave'
+                              ? 'bg-[#fbf2f4] border-[#b05c72] text-[#261d2e] ring-1 ring-[#b05c72]'
+                              : 'bg-[#f3eef8] border-[#6d4c82] text-[#261d2e] ring-1 ring-[#6d4c82]'
+                            : 'bg-[#faf8fb] border-[#e6dfee] text-[#493d54]'
+                        }`}
+                      >
+                        <span className="text-sm font-semibold block">{lvl.label}</span>
+                        <span className="text-xs text-[#5a4e66] block mt-0.5">{lvl.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -898,125 +789,123 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs flex items-center gap-2 cursor-pointer"
+                  className="min-h-[44px] px-4 py-2 bg-[#faf8fb] hover:bg-[#f3eef8] text-[#4f3461] border border-[#e6dfee] rounded-xl text-sm font-medium inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                   <span>Voltar</span>
                 </button>
                 <button
                   type="button"
                   disabled={!description.trim()}
                   onClick={() => setStep(4)}
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-5 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <span>Próximo Passo (Criptografia)</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Próximo passo</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 4: Criptografia E2EE & Envio */}
+          {/* STEP 4 */}
           {step === 4 && (
-            <div className="space-y-5 animate-in fade-in duration-200">
-              <div className="p-4 bg-purple-950/40 border border-purple-500/40 rounded-xl space-y-3">
-                <div className="flex items-center gap-2.5 text-purple-300 font-bold text-sm">
-                  <Lock className="w-5 h-5 text-pink-400" />
-                  <span>Criptografia de Ponta a Ponta (AES-GCM 256-bit)</span>
+            <div className="space-y-5">
+              <div className="p-4 sm:p-5 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl space-y-2.5">
+                <div className="flex items-center gap-2 text-[#4f3461] font-semibold text-sm">
+                  <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>Como seus dados ficam protegidos</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Para sua máxima proteção, os dados sensíveis deste relato serão encriptados diretamente no seu navegador antes do armazenamento. Apenas detentores da sua senha ou chave de protocolo poderão desencriptá-los.
+                <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
+                  O texto completo do relato, as características do autor e as testemunhas são criptografados com o seu PIN antes de serem guardados. Apenas quem tem o número de protocolo e o PIN consegue abrir esses detalhes na aba “Acompanhar protocolo”.
+                </p>
+                <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
+                  Para exibir o ponto no mapa em Santa Catarina, ficam visíveis apenas a categoria, a cidade, o bairro/referência aproximada e o título curto. Por isso, não escreva seu nome ou endereço residencial exato no título.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Defina um PIN Secreto de Acesso (4 Dígitos)
+                <label htmlFor="report-pin-input" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  Escolha um PIN de 4 a 6 dígitos para acessar este relato depois
                 </label>
-                <input 
-                  type="password" 
+                <input
+                  id="report-pin-input"
+                  type="password"
                   maxLength={6}
                   required
                   value={secretPin}
                   onChange={(e) => setSecretPin(e.target.value)}
-                  className="w-full sm:w-48 px-3.5 py-2.5 bg-slate-950 border border-purple-500/50 rounded-xl text-sm font-extrabold text-center text-white tracking-widest focus:outline-none focus:border-purple-400"
+                  className="w-full sm:w-48 min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#ddd1ea] rounded-xl text-base font-semibold text-center text-[#261d2e] tracking-widest"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Guarde este PIN para acessar e exportar seu caso com segurança e sigilo.
-                </p>
               </div>
 
-              {/* Privacy Terms Notice */}
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-[11px] text-slate-400 leading-normal space-y-1">
-                <p className="font-semibold text-slate-300">Termos de Privacidade e Proteção LGPD (Art. 5º II)</p>
-                <p>
-                  Esta denúncia é protegida por normativas estritas de confidencialidade de dados de gênero e integridade física. Nenhuma informação pessoal será vendida, exposta publicamente ou transferida a terceiros sem a sua expressa autorização.
-                </p>
+              <div className="p-3.5 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-xs text-[#5a4e66] leading-relaxed">
+                <strong className="text-[#261d2e] block mb-0.5">Aviso importante</strong>
+                Este registro ajuda você a guardar informações e contribui para o mapa preventivo do aplicativo, mas não envia denúncia automática à Polícia Civil nem substitui o Boletim de Ocorrência oficial (180, 181, 190 ou Delegacia Virtual).
               </div>
 
               <div className="flex justify-between pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs flex items-center gap-2 cursor-pointer"
+                  className="min-h-[44px] px-4 py-2 bg-[#faf8fb] hover:bg-[#f3eef8] text-[#4f3461] border border-[#e6dfee] rounded-xl text-sm font-medium inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                   <span>Voltar</span>
                 </button>
 
                 <button
                   type="submit"
                   disabled={isEncrypting}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-xs sm:text-sm rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-purple-950 cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-6 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {isEncrypting ? (
-                    <span>Processando Criptografia...</span>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>Criptografar & Registrar Denúncia</span>
-                    </>
-                  )}
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                  <span>{isEncrypting ? 'Salvando com segurança...' : 'Salvar relato com proteção'}</span>
                 </button>
               </div>
             </div>
           )}
         </form>
       ) : (
-        /* Submission Success Receipt Screen */
-        <div className="space-y-6 text-center animate-in zoom-in-95 duration-300 py-4">
-          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
-            <CheckCircle2 className="w-10 h-10" />
+        <div className="space-y-6 text-center py-4">
+          <div className="w-14 h-14 bg-[#f1f6f3] text-[#26543b] rounded-full flex items-center justify-center mx-auto border border-[#cde0d4]">
+            <CheckCircle2 className="w-8 h-8" aria-hidden="true" />
           </div>
 
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">
-              Denúncia Registrada com Sucesso
-            </span>
-            <h3 className="text-2xl font-extrabold text-white font-heading">
-              Protocolo Gerado
-            </h3>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-[#26543b]">Relato salvo com proteção</p>
+            <h2 className="text-2xl font-semibold text-[#261d2e] font-heading">
+              Guarde seu protocolo
+            </h2>
           </div>
 
-          <div className="p-5 bg-slate-950 border border-purple-500/40 rounded-2xl max-w-md mx-auto space-y-3">
-            <p className="text-xs text-slate-400">Seu número de protocolo criptografado é:</p>
-            <div className="text-2xl font-mono font-bold text-purple-300 tracking-wider bg-slate-900 py-2.5 px-4 rounded-xl border border-slate-800">
+          <div className="p-5 bg-[#faf8fb] border border-[#e6dfee] rounded-2xl max-w-md mx-auto space-y-2.5">
+            <p className="text-xs text-[#5a4e66]">Número do protocolo:</p>
+            <div className="text-2xl font-mono font-bold text-[#4f3461] tracking-wider bg-white py-2.5 px-4 rounded-xl border border-[#ddd1ea]">
               {submittedReport.id}
             </div>
-            <p className="text-[11px] text-slate-400">
-              PIN de Desbloqueio: <strong className="text-amber-300 font-mono">{submittedReport.accessKey}</strong>
-            </p>
-            <p className="text-[10px] text-slate-500 font-mono break-all">
-              SHA-256: {submittedReport.encryptionHash}
+            <p className="text-xs text-[#5a4e66]">
+              PIN escolhido: <strong className="text-[#261d2e] font-mono">{submittedReport.accessKey}</strong>
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {onGoToTrack && (
+              <button
+                type="button"
+                onClick={() => onGoToTrack(submittedReport.id)}
+                className="min-h-[44px] px-5 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <FileSearch className="w-4 h-4" aria-hidden="true" />
+                <span>Acompanhar protocolo</span>
+              </button>
+            )}
+
             <button
-              onClick={() => onCancel()}
-              className="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-md"
+              type="button"
+              onClick={onCancel}
+              className="min-h-[44px] px-5 py-2.5 bg-[#faf8fb] hover:bg-[#f3eef8] text-[#4f3461] border border-[#ddd1ea] font-medium text-sm rounded-xl transition-colors cursor-pointer"
             >
-              Ver no Mapa de Calor
+              Voltar
             </button>
           </div>
         </div>

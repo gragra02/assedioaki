@@ -15,42 +15,8 @@ export const getSystemTimeZone = (): string => {
   }
 };
 
-let cachedClientIp: string | null = null;
-
-if (typeof window !== 'undefined') {
-  fetch('https://api.ipify.org?format=json')
-    .then(res => res.json())
-    .then(data => {
-      if (data && data.ip) {
-        cachedClientIp = data.ip;
-        try { localStorage.setItem('assedioaki_client_ip', data.ip); } catch {}
-      }
-    })
-    .catch(() => {});
-}
-
 export const getClientIp = (): string => {
-  if (cachedClientIp) return cachedClientIp;
-  try {
-    const stored = localStorage.getItem('assedioaki_client_ip');
-    if (stored) {
-      cachedClientIp = stored;
-      return stored;
-    }
-  } catch {}
-  
-  const scIps = [
-    '177.136.241.102', // Florianópolis / SC
-    '201.86.194.55',   // Joinville / SC
-    '189.102.14.73',   // Blumenau / SC
-    '179.184.210.19'   // Criciúma / SC
-  ];
-  const selected = scIps[Math.floor(Math.random() * scIps.length)];
-  try {
-    localStorage.setItem('assedioaki_client_ip', selected);
-  } catch {}
-  cachedClientIp = selected;
-  return selected;
+  return 'Local (dispositivo)';
 };
 
 const INITIAL_LOGS: AccessLog[] = [
@@ -151,8 +117,8 @@ export const clearAccessLogs = async (): Promise<AccessLog[]> => {
   return [];
 };
 
-export const exportAccessLogsToCSV = (): void => {
-  const logs = getAccessLogs();
+export const exportAccessLogsToCSV = (customLogs?: AccessLog[]): void => {
+  const logs = customLogs ?? getAccessLogs();
   let csvContent = 'data:text/csv;charset=utf-8,ID,Data/Hora,Utilizador,Email,Papel,Acao,IP,Fuso Horario,Localizacao,Dispositivo,Status\n';
 
   logs.forEach(l => {

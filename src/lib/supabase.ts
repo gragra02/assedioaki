@@ -1,11 +1,35 @@
 import { createClient } from '@supabase/supabase-js';
 import { Report, ReportComment } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const rawUrl = (import.meta.env?.VITE_SUPABASE_URL || '').trim();
+const rawAnonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY || '').trim();
 
-export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey)
+export function isPlaceholderSupabaseValue(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized.includes('seu_project_url_aqui') ||
+    normalized.includes('sua_chave_anon_aqui') ||
+    normalized.includes('your_supabase')
+  );
+}
+
+export function isValidSupabaseConfig(url: string, anonKey: string): boolean {
+  if (isPlaceholderSupabaseValue(url) || isPlaceholderSupabaseValue(anonKey)) {
+    return false;
+  }
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+export const isSupabaseConfigured = isValidSupabaseConfig(rawUrl, rawAnonKey);
+
+export const supabase = isSupabaseConfigured
+  ? createClient(rawUrl, rawAnonKey)
   : null;
 
 export function mapDbRowToReport(row: any, comments: ReportComment[] = []): Report {

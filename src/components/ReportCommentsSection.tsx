@@ -144,14 +144,14 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-1.5 text-[11px] text-slate-700 cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-xs text-[#493d54] cursor-pointer select-none min-h-[44px]">
               <input
                 type="checkbox"
                 checked={isAnonymous}
                 onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="w-3.5 h-3.5 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
+                className="w-4 h-4 accent-[#6d4c82] rounded border-[#ddd1ea]"
               />
-              <span className="font-semibold">Comentar como anônima</span>
+              <span className="font-medium">Comentar de forma anônima</span>
             </label>
 
             {!isAnonymous && (
@@ -160,7 +160,8 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
                 placeholder="Seu nome ou apelido"
-                className="bg-white border border-slate-300 rounded-lg px-2 py-0.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 w-36"
+                aria-label="Seu nome ou apelido"
+                className="bg-white border border-[#ddd1ea] rounded-lg px-2.5 py-1.5 text-xs text-[#261d2e] w-36 min-h-[38px]"
               />
             )}
           </div>
@@ -168,18 +169,18 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || !commentText.trim()}
-            className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed shadow-xs shrink-0"
+            className="min-h-[44px] px-4 py-2 bg-[#6d4c82] hover:bg-[#593c6b] disabled:bg-[#cfc5da] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed shrink-0"
           >
-            <Send className="w-3 h-3" />
-            <span>Comentar</span>
+            <Send className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Enviar apoio</span>
           </button>
         </div>
 
-        {/* Aviso de Coleta de IP para Auditoria */}
-        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1.5 border-t border-slate-200/80">
-          <Globe className="w-3 h-3 text-purple-600 shrink-0" />
+        {/* Honest visibility guidance */}
+        <div className="flex items-start gap-2 text-[11px] text-[#5a4e66] pt-2 border-t border-[#e6dfee]">
+          <Globe className="w-3.5 h-3.5 text-[#6d4c82] shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            Para segurança da rede e combate a fraudes/ameaças, o <strong>IP da conexão ({getClientIp()})</strong> é coletado e registrado nos relatórios de auditoria, inclusive em comentários anônimos (Marco Civil da Internet).
+            Comentários ficam visíveis para quem consulta este ponto no mapa. Evite informar nomes completos, documentos ou telefones pessoais.
           </span>
         </div>
       </form>

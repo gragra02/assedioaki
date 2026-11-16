@@ -897,12 +897,13 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 {selectedCenter.name}
               </h3>
             </div>
-            <button 
+            <button
+              type="button"
               onClick={() => {
                 setSelectedCenter(null);
                 setSelectedDeamId('all');
               }}
-              className="text-slate-500 hover:text-slate-900 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded cursor-pointer font-bold"
+              className="min-h-[44px] min-w-[44px] text-[#5a4e66] hover:text-[#261d2e] text-xs bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] px-3 py-2 rounded-xl cursor-pointer font-semibold"
             >
               Fechar
             </button>
@@ -990,10 +991,14 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           <div className="pt-2 space-y-2">
             <div className="flex gap-2">
               <a
-                href={`tel:${selectedCenter.phone.replace(/[^0-9]/g, '')}`}
-                className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                href={`tel:${(() => {
+                  const parts = selectedCenter.phone.split('/');
+                  const dddPart = parts.find((p) => /\(\d{2}\)/.test(p)) || parts[0] || '';
+                  return dddPart.replace(/[^0-9]/g, '');
+                })()}`}
+                className="flex-1 min-h-[44px] py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Phone className="w-3.5 h-3.5" />
+                <Phone className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Ligar</span>
               </a>
 
@@ -1048,11 +1053,12 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               </h3>
             </div>
             <button 
+              type="button"
               onClick={() => {
                 setSelectedReport(null);
                 setSelectedCluster(null);
               }}
-              className="text-slate-500 hover:text-slate-900 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded font-bold cursor-pointer"
+              className="min-h-[44px] min-w-[44px] text-[#5a4e66] hover:text-[#261d2e] text-xs bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] px-3 py-2 rounded-xl font-semibold cursor-pointer"
             >
               Fechar
             </button>
@@ -1171,77 +1177,69 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               </div>
             ) : (
               filteredReports.map((rep) => (
-                <div 
+                <article 
                   key={rep.id}
-                  onClick={() => {
-                    setSelectedReport(rep);
-                    setSelectedCenter(null);
-                    if (mapInstanceRef.current) {
-                      mapInstanceRef.current.setView([rep.lat, rep.lng], 15);
-                    }
-                  }}
-                  className="p-3.5 bg-white hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 rounded-xl transition-all cursor-pointer space-y-2 shadow-2xs group"
+                  className="p-3.5 bg-white border border-[#e6dfee] rounded-xl space-y-2"
                 >
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                    <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                      (rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                      (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'bg-amber-100 text-amber-900 border border-amber-200' :
-                      'bg-blue-100 text-blue-800 border border-blue-200'
+                  <div className="flex items-center justify-between border-b border-[#efe9f4] pb-1.5">
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${
+                      (rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'bg-[#fbf2f4] text-[#7f3347] border border-[#eed4dc]' :
+                      (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'bg-[#fcf7eb] text-[#6e4f16] border border-[#ebd7ad]' :
+                      'bg-[#f3eef8] text-[#4f3461] border border-[#ddd1ea]'
                     }`}>
                       Gravidade: {(rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'Grave' :
                        (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'Média' : 'Baixa'}
                     </span>
                     <div className="flex items-center gap-1.5">
                       {rep.comments && rep.comments.length > 0 && (
-                        <span className="text-[10px] text-purple-700 bg-purple-100 font-bold px-1.5 py-0.5 rounded flex items-center gap-1" title={`${rep.comments.length} comentários`}>
-                          <MessageSquare className="w-2.5 h-2.5" />
+                        <span className="text-[11px] text-[#4f3461] bg-[#f3eef8] font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1" title={`${rep.comments.length} comentários`}>
+                          <MessageSquare className="w-3 h-3" aria-hidden="true" />
                           <span>{rep.comments.length}</span>
                         </span>
                       )}
-                      <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                      <span className="text-[11px] text-[#4f3461] font-semibold bg-[#faf8fb] px-2 py-0.5 rounded-lg border border-[#e6dfee]">
                         #{rep.id.replace(/^ASK-\d{4}-/, '')}
                       </span>
                     </div>
                   </div>
 
                   {/* Informações Obrigatórias em Português */}
-                  <div className="space-y-1.5 text-xs text-slate-700 leading-snug">
+                  <div className="space-y-1.5 text-xs text-[#493d54] leading-snug">
                     <div>
-                      <span className="text-slate-500 font-semibold">Tipo de Violência: </span>
-                      <strong className="text-purple-950 font-bold">{getTipoViolenciaPt(rep.category)}</strong>
+                      <span className="text-[#5a4e66] font-medium">Tipo de violência: </span>
+                      <strong className="text-[#261d2e] font-semibold">{getTipoViolenciaPt(rep.category)}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-semibold">Tipo de Local do Ocorrido: </span>
-                      <strong className="text-slate-900 font-bold">{getTipoLocalPt(rep.locationType, rep.address)}, {rep.city}</strong>
+                      <span className="text-[#5a4e66] font-medium">Local aproximado: </span>
+                      <strong className="text-[#261d2e] font-semibold">{getTipoLocalPt(rep.locationType, rep.address)}, {rep.city}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-semibold">Data e Hora: </span>
-                      <strong className="text-slate-900 font-bold">{formatarDataHoraPt(rep.dateTime, rep.periodOfDay)}</strong>
+                      <span className="text-[#5a4e66] font-medium">Data e período: </span>
+                      <strong className="text-[#261d2e] font-semibold">{formatarDataHoraPt(rep.dateTime, rep.periodOfDay)}</strong>
                     </div>
                   </div>
 
                   {/* Botão Mais Detalhes */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-500 truncate max-w-[170px]" title={rep.address}>
+                  <div className="pt-2 border-t border-[#efe9f4] flex items-center justify-between gap-2">
+                    <span className="text-xs text-[#5a4e66] truncate max-w-[165px]" title={rep.address}>
                       {rep.address}
                     </span>
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         setSelectedReport(rep);
                         setSelectedCenter(null);
                         if (mapInstanceRef.current) {
                           mapInstanceRef.current.setView([rep.lat, rep.lng], 15);
                         }
                       }}
-                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-2xs group-hover:scale-[1.02] cursor-pointer shrink-0"
+                      className="min-h-[44px] px-3.5 py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer shrink-0"
                     >
-                      <span>Mais Detalhes</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Mais detalhes</span>
+                      <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
                   </div>
-                </div>
+                </article>
               ))
             )}
           </div>
@@ -1263,71 +1261,65 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Map Header & Filter Controls Bar */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+      <div className="bg-white border border-[#e6dfee] rounded-2xl p-4 sm:p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             {mode === 'locator' ? (
               <>
-                <div className="flex items-center gap-2 text-purple-600 font-bold text-xs uppercase tracking-wider">
-                  <Locate className="w-4 h-4 text-purple-600" />
-                  <span>Localizador de Emergência</span>
-                </div>
-                <h2 className="text-xl font-extrabold text-slate-900 font-heading mt-0.5">
-                  Unidades de Apoio Mais Próximas de Você
+                <p className="text-xs font-semibold text-[#6d4c82]">
+                  Localizador em Santa Catarina
+                </p>
+                <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading mt-0.5">
+                  Delegacia ou hospital mais próximo
                 </h2>
-                <p className="text-xs text-slate-600">
-                  Localize no mapa a Delegacia da Mulher (DPCAMI / DEAM) ou Hospital de Urgência mais próximo para acolhimento imediato em Santa Catarina.
+                <p className="text-xs sm:text-sm text-[#5a4e66]">
+                  Encontre no mapa a Delegacia da Mulher (DPCAMI) ou Hospital 24h mais perto de você.
                 </p>
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2 text-pink-600 font-bold text-xs uppercase tracking-wider">
-                  <Flame className="w-4 h-4" />
-                  <span>Mapa de Calor Interativo</span>
-                </div>
-                <h2 className="text-xl font-extrabold text-slate-900 font-heading mt-0.5">
-                  Zonas de Incidência de Ocorrências
+                <p className="text-xs font-semibold text-[#6d4c82]">
+                  Mapa preventivo em Santa Catarina
+                </p>
+                <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading mt-0.5">
+                  Áreas de incidência e pontos de apoio
                 </h2>
-                <p className="text-xs text-slate-600">
-                  Visualização espacial das ocorrências registradas e localização das unidades de apoio de Santa Catarina.
+                <p className="text-xs sm:text-sm text-[#5a4e66]">
+                  Inclui registros ilustrativos iniciais e relatos adicionados neste aparelho, junto com delegacias e hospitais de SC.
                 </p>
               </>
             )}
           </div>
 
-          {/* Action Slot on the right side of header (Point circled by user) */}
           <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
             {mode === 'locator' && (
               <button
+                type="button"
                 onClick={() => handleLocateGPS(nearestTarget)}
                 disabled={isLocating}
-                className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer w-full sm:w-auto"
+                className="min-h-[44px] bg-[#6d4c82] hover:bg-[#593c6b] disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer w-full sm:w-auto"
               >
-                <Locate className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
-                <span>{isLocating ? 'Obtendo GPS...' : 'Atualizar Meu GPS'}</span>
+                <Locate className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} aria-hidden="true" />
+                <span>{isLocating ? 'Obtendo localização...' : 'Usar meu GPS'}</span>
               </button>
             )}
-            <div id="floating-report-btn-slot" className="min-h-[44px] flex items-center"></div>
           </div>
         </div>
 
-        {/* Interactive Nearest Support Facility Panel (Delegacia / Hospital) - ONLY in locator mode */}
+        {/* Interactive Nearest Support Facility Panel - ONLY in locator mode */}
         {mode === 'locator' && (
-          <div id="nearest-finder-card" className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200 rounded-2xl p-4 shadow-xs space-y-3">
+          <div id="nearest-finder-card" className="bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl p-4 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-purple-600 text-white rounded-xl shadow-xs">
-                <Locate className="w-4 h-4" />
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-[#6d4c82] text-white rounded-xl shrink-0">
+                <Locate className="w-4 h-4" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                  <span>Localizador de Emergência: Unidade Mais Próxima de Você</span>
-                  <span className="text-[10px] uppercase font-black bg-purple-200/80 text-purple-900 px-2 py-0.5 rounded-full">
-                    Santa Catarina
-                  </span>
+                <h3 className="text-sm font-semibold text-[#261d2e]">
+                  Escolha como localizar a unidade mais próxima
                 </h3>
-                <p className="text-xs text-slate-600">
-                  Localize no mapa a <strong>Delegacia da Mulher (DPCAMI / DEAM)</strong> e/ou o <strong>Hospital de Referência</strong> mais próximo da sua localização.
+                <p className="text-xs text-[#5a4e66]">
+                  Use seu GPS, selecione uma cidade de SC ou clique diretamente no mapa.
                 </p>
               </div>
             </div>
@@ -1479,7 +1471,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             <div className="bg-white rounded-xl border border-purple-200 p-3.5 shadow-xs space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${userLocation.source === 'city' ? 'bg-purple-600' : 'bg-emerald-500 animate-pulse'}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${userLocation.source === 'city' ? 'bg-[#6d4c82]' : 'bg-emerald-600'}`} />
                   <span className="text-xs font-extrabold text-slate-900">
                     {userLocation.cityName ? `Cidade de Referência: ${userLocation.cityName} (SC)` : userLocation.source === 'gps' ? 'Sua Localização GPS Ativa' : 'Ponto Marcado no Mapa'}
                   </span>
@@ -1627,10 +1619,14 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
                     <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
                       <a
-                        href={`tel:${center.phone.replace(/[^0-9]/g, '')}`}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        href={`tel:${(() => {
+                          const parts = center.phone.split('/');
+                          const dddPart = parts.find((p) => /\(\d{2}\)/.test(p)) || parts[0] || '';
+                          return dddPart.replace(/[^0-9]/g, '');
+                        })()}`}
+                        className="min-h-[44px] bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <Phone className="w-3.5 h-3.5" />
+                        <Phone className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>Ligar ({center.phone})</span>
                       </a>
 
@@ -1703,8 +1699,8 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                   }`}
                   title="Envolve violência física, ameaça direta, coerção ou reincidência insistente (ex: stalking ou chantagem)"
                 >
-                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-                  <span>🔴 Grave</span>
+                  <span className="w-2 h-2 rounded-full bg-rose-600" />
+                  <span>Grave</span>
                   <HelpCircle className="w-3.5 h-3.5 text-rose-500 group-hover:text-rose-700 opacity-80" />
                 </button>
 
@@ -1932,8 +1928,8 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           {/* Fullscreen Mode Indicator Badge */}
           {isMapFullscreen && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full border border-slate-700 shadow-xl flex items-center gap-2 text-xs font-semibold pointer-events-none">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Mapa em Tela Cheia</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Mapa ampliado</span>
               <span className="text-[10px] text-slate-300 hidden sm:inline">• Pressione ESC ou clique em "Restaurar" para sair</span>
             </div>
           )}
