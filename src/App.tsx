@@ -12,20 +12,44 @@ import { HelpNowView } from './components/HelpNowView';
 import { UnderstandView } from './components/UnderstandView';
 import { TalkSupportView } from './components/TalkSupportView';
 import { RightsView } from './components/RightsView';
+import { CommunityView } from './components/CommunityView';
+import { FloatingHelpButton } from './components/FloatingHelpButton';
+import { SafeSpaceDeclarationModal } from './components/SafeSpaceDeclarationModal';
 import { INITIAL_REPORTS, SUPPORT_CENTERS } from './lib/initialData';
-import { Report, User, ReportComment } from './types';
+import {
+  Report,
+  User,
+  ReportComment,
+  CommunityPost,
+  CommunityCategory,
+  CommunityFlagReason
+} from './types';
 import { supabase, mapDbRowToReport, mapReportToDbRow } from './lib/supabase';
+import {
+  addReplyToCommunityPost,
+  createCommunityPost,
+  flagCommunityPost,
+  getOrCreateLocalAuthorId,
+  loadBlockedAuthors,
+  loadCommunityPosts,
+  moderateCommunityPost,
+  saveBlockedAuthors,
+  saveCommunityPosts,
+  toggleSupportOnCommunityPost
+} from './lib/community';
+import { addAccessLog } from './lib/accessLogs';
 import appLogo from './assets/logo.jpg';
 
 const VALID_SECTIONS: NavSection[] = [
   'home',
+  'map',
+  'community',
   'help',
   'understand',
   'talk',
   'rights',
   'report',
-  'track',
-  'map'
+  'track'
 ];
 
 export default function App() {
@@ -42,6 +66,7 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState<boolean>(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState<boolean>(false);
+  const [isSafeSpaceOpen, setIsSafeSpaceOpen] = useState<boolean>(false);
   const [menuModalSection, setMenuModalSection] = useState<MenuModalSection>('privacy');
   const [user, setUser] = useState<User | null>(null);
 
@@ -77,6 +102,23 @@ export default function App() {
     }
     return INITIAL_REPORTS;
   });
+
+  // Community state (persisted cleanly in localStorage)
+  const [localAuthorId] = useState<string>(() => getOrCreateLocalAuthorId());
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>(() =>
+    loadCommunityPosts()
+  );
+  const [blockedAuthorIds, setBlockedAuthorIds] = useState<string[]>(() =>
+    loadBlockedAuthors()
+  );
+
+  useEffect(() => {
+    saveCommunityPosts(communityPosts);
+  }, [communityPosts]);
+
+  useEffect(() => {
+    saveBlockedAuthors(blockedAuthorIds);
+  }, [blockedAuthorIds]);
 
   const [selectedTrackId, setSelectedTrackId] = useState<string>('');
   const [reportLocationPreload, setReportLocationPreload] = useState<{
@@ -230,6 +272,74 @@ export default function App() {
     }
   };
 
+  // Community handlers
+  const handleCreateCommunityPost = (input: {
+    title: string;
+    content: string;
+    category: CommunityCategory;
+    city?: string;
+    isAnonymous: boolean;
+    authorDisplayName?: string;
+  }) => {
+    const newPost = createCommunityPost({
+      ...input,
+      authorId: localAuthorId
+    });
+    setCommunityPosts((prev) => [newPost, ...prev]);
+    addAccessLog(
+      `Publicação na Comunidade (${input.category})`,
+      newPost.authorLabel,
+      input.isAnonymous ? 'anonimo@assedioaki.com.br' : user?.email || 'comunidade@assedioaki.com.br',
+      input.isAnonymous ? 'anonymous' : 'user'
+    );
+  };
+
+  const handleReplyCommunityPost = (
+    postId: string,
+    input: { content: string; isAnonymous: boolean; authorDisplayName?: string }
+  ) => {
+    setCommunityPosts((prev) =>
+      addReplyToCommunityPost(prev, postId, {
+        ...input,
+        authorId: localAuthorId
+      })
+    );
+  };
+
+  const handleToggleCommunitySupport = (postId: string, delta: 1 | -1) => {
+    setCommunityPosts((prev) => toggleSupportOnCommunityPost(prev, postId, delta));
+  };
+
+  const handleFlagCommunityPost = (postId: string, reason: CommunityFlagReason) => {
+    setCommunityPosts((prev) => flagCommunityPost(prev, postId, reason));
+    addAccessLog(
+      `Denúncia de publicação na comunidade (${postId} · ${reason})`,
+      'Participante da Comunidade',
+      'anonimo@assedioaki.com.br',
+      'anonymous',
+      'aviso'
+    );
+  };
+
+  const handleModerateCommunityPost = (
+    postId: string,
+    action: 'approve' | 'hide' | 'delete'
+  ) => {
+    setCommunityPosts((prev) => moderateCommunityPost(prev, postId, action));
+    addAccessLog(
+      `Moderação na comunidade (${action}: ${postId})`,
+      user?.name || 'Administrador',
+      user?.email,
+      'admin'
+    );
+  };
+
+  const handleBlockAuthor = (authorId: string) => {
+    setBlockedAuthorIds((prev) =>
+      prev.includes(authorId) ? prev : [...prev, authorId]
+    );
+  };
+
   const handleSelectReportForTrack = (reportId: string) => {
     setSelectedTrackId(reportId);
     navigateTo('track');
@@ -278,6 +388,10 @@ export default function App() {
     setIsMenuModalOpen(true);
   };
 
+  const visibleCommunityPostsCount = communityPosts.filter(
+    (p) => p.moderationStatus !== 'hidden' && !blockedAuthorIds.includes(p.authorId)
+  ).length;
+
   return (
     <div className="min-h-screen bg-[#faf8fb] text-[#261d2e] font-sans flex flex-col justify-between">
       {/* Quick Exit Mask Overlay */}
@@ -285,6 +399,12 @@ export default function App() {
         isMasked={isMasked}
         onUnmask={() => setIsMasked(false)}
         onRedirectExternal={handleRedirectExternal}
+      />
+
+      {/* Optional Safe Space Declaration Modal (accessible without blocking help) */}
+      <SafeSpaceDeclarationModal
+        isOpen={isSafeSpaceOpen}
+        onAccept={() => setIsSafeSpaceOpen(false)}
       />
 
       {/* Optional Auth Modal (kept discreet in footer, never blocking support) */}
@@ -313,11 +433,54 @@ export default function App() {
       />
 
       {/* Main Container Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-24 lg:pb-10 w-full flex-1">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-32 lg:pb-24 w-full flex-1">
         {activeSection === 'home' && (
           <HomeView
+            reports={reports}
+            totalSupportCenters={SUPPORT_CENTERS.length}
+            communityPostsCount={visibleCommunityPostsCount}
             onNavigate={(sec: AppSection) => navigateTo(sec)}
+            onOpenNewReport={() => navigateTo('report')}
             onOpenPrivacy={() => openInfoModal('privacy')}
+            onOpenSafeSpaceDeclaration={() => setIsSafeSpaceOpen(true)}
+          />
+        )}
+
+        {activeSection === 'map' && (
+          <div className="max-w-6xl mx-auto space-y-4">
+            <button
+              type="button"
+              onClick={() => navigateTo('home')}
+              className="min-h-[44px] px-3 py-2 -ml-3 rounded-xl text-sm font-medium text-[#5b3d6e] hover:bg-[#f3eef8] transition-colors cursor-pointer"
+            >
+              ← Voltar para o início
+            </button>
+            <HeatmapView
+              reports={reports}
+              supportCenters={SUPPORT_CENTERS}
+              mode="heatmap"
+              currentUser={user}
+              onAddComment={handleAddComment}
+              onNewReportAtLocation={handleNewReportAtLocation}
+              onOpenNewReport={() => navigateTo('report')}
+              onSelectReportForTrack={handleSelectReportForTrack}
+            />
+          </div>
+        )}
+
+        {activeSection === 'community' && (
+          <CommunityView
+            posts={communityPosts}
+            blockedAuthorIds={blockedAuthorIds}
+            localAuthorId={localAuthorId}
+            currentUser={user}
+            onCreatePost={handleCreateCommunityPost}
+            onReplyPost={handleReplyCommunityPost}
+            onToggleSupport={handleToggleCommunitySupport}
+            onFlagPost={handleFlagCommunityPost}
+            onBlockAuthor={handleBlockAuthor}
+            onUnblockAllAuthors={() => setBlockedAuthorIds([])}
+            onBackHome={() => navigateTo('home')}
           />
         )}
 
@@ -364,27 +527,6 @@ export default function App() {
           />
         )}
 
-        {activeSection === 'map' && (
-          <div className="max-w-6xl mx-auto space-y-4">
-            <button
-              type="button"
-              onClick={() => navigateTo('home')}
-              className="min-h-[44px] px-3 py-2 -ml-3 rounded-xl text-sm font-medium text-[#5b3d6e] hover:bg-[#f3eef8] transition-colors cursor-pointer"
-            >
-              ← Voltar para o início
-            </button>
-            <HeatmapView
-              reports={reports}
-              supportCenters={SUPPORT_CENTERS}
-              mode="heatmap"
-              currentUser={user}
-              onAddComment={handleAddComment}
-              onNewReportAtLocation={handleNewReportAtLocation}
-              onSelectReportForTrack={handleSelectReportForTrack}
-            />
-          </div>
-        )}
-
         {activeSection === 'track' && (
           <div className="max-w-4xl mx-auto space-y-4">
             <button
@@ -417,7 +559,7 @@ export default function App() {
       </main>
 
       {/* Calm Institutional & Privacy Footer */}
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 w-full mb-20 lg:mb-8">
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 w-full mb-28 lg:mb-16">
         <div className="bg-white border border-[#e6dfee] rounded-2xl p-6 sm:p-7 space-y-4 text-center">
           <div className="flex items-center justify-center gap-2.5">
             <img
@@ -493,6 +635,14 @@ export default function App() {
         </div>
       </footer>
 
+      {/* Permanent Bottom-Right Quick Help Floating Button (all pages) */}
+      <FloatingHelpButton
+        onGoToHelp={() => navigateTo('help')}
+        onGoToLocator={() => navigateTo('help')}
+        onQuickExit={() => setIsMasked(true)}
+        isHidden={isMasked}
+      />
+
       {/* Discreet Admin Management Panel */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
@@ -500,6 +650,8 @@ export default function App() {
         reports={reports}
         onDeleteReport={handleDeleteReport}
         onDeleteComment={handleDeleteComment}
+        communityPosts={communityPosts}
+        onModerateCommunityPost={handleModerateCommunityPost}
         currentUser={user}
       />
     </div>

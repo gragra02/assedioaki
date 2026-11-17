@@ -8,16 +8,31 @@ import {
   PhoneCall,
   MessageSquare,
   ShieldCheck,
-  MapPin,
-  FileSearch
+  FileSearch,
+  HeartHandshake
 } from 'lucide-react';
 import { HOME_CARDS, PRIVACY_TRUTHS } from '../lib/guidanceContent';
+import { Report } from '../types';
+import { HeatmapPreviewCard } from './HeatmapPreviewCard';
 
-export type AppSection = 'home' | 'help' | 'understand' | 'talk' | 'rights' | 'track' | 'map';
+export type AppSection =
+  | 'home'
+  | 'map'
+  | 'community'
+  | 'help'
+  | 'understand'
+  | 'talk'
+  | 'rights'
+  | 'track';
 
 interface HomeViewProps {
+  reports: Report[];
+  totalSupportCenters: number;
+  communityPostsCount: number;
   onNavigate: (section: AppSection) => void;
+  onOpenNewReport: () => void;
   onOpenPrivacy: () => void;
+  onOpenSafeSpaceDeclaration?: () => void;
 }
 
 const CARD_ICONS = {
@@ -27,10 +42,18 @@ const CARD_ICONS = {
   rights: Scale
 };
 
-export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy }) => {
+export const HomeView: React.FC<HomeViewProps> = ({
+  reports,
+  totalSupportCenters,
+  communityPostsCount,
+  onNavigate,
+  onOpenNewReport,
+  onOpenPrivacy,
+  onOpenSafeSpaceDeclaration
+}) => {
   return (
-    <div className="space-y-10 sm:space-y-12 py-2 sm:py-4">
-      {/* Serene Hero Section */}
+    <div className="space-y-9 sm:space-y-11 py-2 sm:py-4">
+      {/* 1. Serene Welcome Hero */}
       <section className="max-w-3xl mx-auto text-center space-y-4 px-2">
         <p className="text-xs sm:text-sm font-medium text-[#6d4c82] tracking-wide">
           Acolhimento, orientação e apoio em Santa Catarina
@@ -42,11 +65,54 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
           Estamos aqui para ajudar você a encontrar orientação e apoio.
         </p>
         <p className="text-sm text-[#6b5e77]">
-          Não é necessário fazer cadastro para ler as orientações ou acessar os contatos de ajuda.
+          Não é necessário fazer cadastro para explorar o mapa, ler orientações ou acessar os canais de ajuda.
         </p>
       </section>
 
-      {/* 4 Primary Intuitive Cards */}
+      {/* 2. Protagonist Highlight: MAPA DE CALOR */}
+      <HeatmapPreviewCard
+        reports={reports}
+        totalSupportCenters={totalSupportCenters}
+        onExploreHeatmap={() => onNavigate('map')}
+        onNewReport={onOpenNewReport}
+      />
+
+      {/* 3. Community & Peer Support Highlight Card */}
+      <section aria-labelledby="home-community-heading" className="max-w-5xl mx-auto">
+        <div className="bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl p-6 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#4f3461]">
+              <HeartHandshake className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Espaço de escuta mútua e acolhimento</span>
+              {communityPostsCount > 0 && (
+                <span className="px-2 py-0.5 rounded-lg bg-white border border-[#ddd1ea] text-[#4f3461] tabular-nums">
+                  {communityPostsCount} {communityPostsCount === 1 ? 'publicação' : 'publicações'}
+                </span>
+              )}
+            </div>
+            <h2
+              id="home-community-heading"
+              className="text-xl sm:text-2xl font-semibold text-[#261d2e] font-heading tracking-tight"
+            >
+              COMUNIDADE — VOZES QUE SE APOIAM
+            </h2>
+            <p className="text-sm sm:text-[15px] text-[#493d54] leading-relaxed">
+              Compartilhe experiências sem revelar sua identidade, leia relatos de outras mulheres e envie mensagens de apoio com proteção contra exposição de dados pessoais.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('community')}
+            className="min-h-[48px] px-5 py-3 rounded-xl bg-white hover:bg-[#faf8fb] border border-[#cfc0df] text-[#4f3461] font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
+          >
+            <span>Acessar Comunidade</span>
+            <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+
+      {/* 4. Preserved 4 Primary Intuitive Cards */}
       <section aria-label="Principais caminhos de apoio" className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {HOME_CARDS.map((card, index) => {
@@ -81,9 +147,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
                   </div>
 
                   <div className="space-y-1.5">
-                    <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading tracking-tight">
+                    <h3 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading tracking-tight">
                       {card.title}
-                    </h2>
+                    </h3>
                     <p className="text-sm sm:text-[15px] text-[#5a4e66] leading-relaxed">
                       {card.description}
                     </p>
@@ -107,7 +173,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
         </div>
       </section>
 
-      {/* Calm Utility Strip: Official Emergency Contacts + Privacy Reassurance */}
+      {/* 5 & 6. Official Public Channels + Privacy & Security Reassurance */}
       <section className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Official Emergency Services */}
         <div className="lg:col-span-7 bg-white border border-[#e6dfee] rounded-2xl p-6 space-y-4 flex flex-col justify-between">
@@ -123,7 +189,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <a
               href="tel:190"
               className="min-h-[52px] px-4 py-3 rounded-xl bg-[#fbf2f4] hover:bg-[#f7e6ea] border border-[#e7cbd3] text-[#7f3347] flex flex-col justify-center transition-colors"
@@ -132,7 +198,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
                 <PhoneCall className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>Ligar 190</span>
               </span>
-              <span className="text-xs text-[#694853]">Perigo imediato (PM)</span>
+              <span className="text-xs text-[#694853]">Perigo imediato (Polícia Militar)</span>
             </a>
 
             <a
@@ -143,7 +209,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
                 <PhoneCall className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>Ligar 180</span>
               </span>
-              <span className="text-xs text-[#5d4b6b]">Central da Mulher</span>
+              <span className="text-xs text-[#5d4b6b]">Central da Mulher 24h</span>
             </a>
 
             <a
@@ -157,6 +223,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
                 <span>WhatsApp 180</span>
               </span>
               <span className="text-xs text-[#3b614b]">Conversar por texto</span>
+            </a>
+
+            <a
+              href="tel:181"
+              className="min-h-[52px] px-4 py-3 rounded-xl bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] text-[#4f3461] flex flex-col justify-center transition-colors"
+            >
+              <span className="text-base font-bold tabular-nums flex items-center gap-1.5">
+                <PhoneCall className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Disque 181 (SC)</span>
+              </span>
+              <span className="text-xs text-[#5d4b6b]">Denúncia anônima Polícia Civil</span>
             </a>
           </div>
         </div>
@@ -185,20 +262,21 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, onOpenPrivacy })
             </button>
             <button
               type="button"
-              onClick={() => onNavigate('map')}
-              className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white hover:bg-[#faf8fb] border border-[#ddd1ea] text-xs sm:text-sm font-medium text-[#4f3461] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <MapPin className="w-4 h-4" aria-hidden="true" />
-              <span>Mapa em SC</span>
-            </button>
-            <button
-              type="button"
               onClick={() => onNavigate('track')}
               className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white hover:bg-[#faf8fb] border border-[#ddd1ea] text-xs sm:text-sm font-medium text-[#4f3461] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <FileSearch className="w-4 h-4" aria-hidden="true" />
               <span>Acompanhar protocolo</span>
             </button>
+            {onOpenSafeSpaceDeclaration && (
+              <button
+                type="button"
+                onClick={onOpenSafeSpaceDeclaration}
+                className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white hover:bg-[#faf8fb] border border-[#ddd1ea] text-xs sm:text-sm font-medium text-[#4f3461] transition-colors cursor-pointer"
+              >
+                Compromisso de espaço seguro
+              </button>
+            )}
           </div>
         </div>
       </section>

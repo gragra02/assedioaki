@@ -8,19 +8,18 @@ import {
   Globe, Sparkles, Locate, Crosshair, Footprints, Car, X, Compass, CheckCircle2,
   ArrowRight, HeartPulse, RefreshCw, Mail, Maximize2, Minimize2, HelpCircle
 } from 'lucide-react';
-import { calculateDistanceKm, findNearestPair, formatDistance, NearestResult } from '../lib/geo';
+import {
+  calculateDistanceKm,
+  findNearestPair,
+  formatDistance,
+  NearestResult,
+  clusterReportsByProximity,
+  isDemoExampleReport,
+  PrivacyCluster
+} from '../lib/geo';
 import { SC_CITY_COORDINATES_MAP, SC_CITIES_NAMES } from '../lib/scCities';
 
-interface HeatCluster {
-  id: string;
-  lat: number;
-  lng: number;
-  reports: Report[];
-  count: number;
-  highestRisk: 'urgente' | 'alto' | 'medio' | 'baixo' | 'grave' | 'moderado' | 'leve';
-  address: string;
-  city: string;
-}
+type HeatCluster = PrivacyCluster;
 
 const getTipoViolenciaPt = (category: string): string => {
   switch (category) {
@@ -90,6 +89,7 @@ interface HeatmapViewProps {
   reports: Report[];
   supportCenters: SupportCenter[];
   onNewReportAtLocation?: (lat: number, lng: number, address: string) => void;
+  onOpenNewReport?: () => void;
   onSelectReportForTrack?: (reportId: string) => void;
   mode?: 'heatmap' | 'locator';
   currentUser?: User | null;
@@ -100,6 +100,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   reports,
   supportCenters,
   onNewReportAtLocation,
+  onOpenNewReport,
   onSelectReportForTrack,
   mode = 'heatmap',
   currentUser,
@@ -114,6 +115,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
+  const [dataScope, setDataScope] = useState<'all' | 'real_only'>('all');
   
   // Support Center / DEAM / Hospital filters & selection
   const [centerTypeFilter, setCenterTypeFilter] = useState<'all' | 'delegacia' | 'hospital' | 'none'>('all');
@@ -188,6 +190,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   // Filter reports according to current controls
   const filteredReports = useMemo(() => {
     return reports.filter(rep => {
+      if (dataScope === 'real_only' && isDemoExampleReport(rep)) return false;
       if (selectedCity !== 'all' && rep.city !== selectedCity) return false;
       if (categoryFilter !== 'all' && rep.category !== categoryFilter) return false;
       if (periodFilter !== 'all' && rep.periodOfDay !== periodFilter) return false;
@@ -202,7 +205,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       }
       return true;
     });
-  }, [reports, selectedCity, categoryFilter, periodFilter, riskFilter]);
+  }, [reports, dataScope, selectedCity, categoryFilter, periodFilter, riskFilter]);
 
   // Automatically close report inspector if filtered out by active filter
   useEffect(() => {
@@ -492,72 +495,51 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     const layerGroup = layerGroupRef.current;
     layerGroup.clearLayers();
 
-    // Group filteredReports into spatial clusters to display occurrence count on bubbles
-    const clusters: HeatCluster[] = [];
-    const CLUSTER_THRESHOLD = 0.005; // ~500m radius threshold for clustering nearby incidents
+    // Group filteredReports into privacy-safe spatial clusters
+    const clusters = clusterReportsByProximity(filteredReports, 0.008);
 
-    filteredReports.forEach((report) => {
-      const existing = clusters.find(c => {
-        const dLat = Math.abs(c.lat - report.lat);
-        const dLng = Math.abs(c.lng - report.lng);
-        return dLat <= CLUSTER_THRESHOLD && dLng <= CLUSTER_THRESHOLD;
-      });
-
-      if (existing) {
-        existing.reports.push(report);
-        existing.count += 1;
-        const riskPriority: Record<string, number> = { 
-          grave: 4, urgente: 4, alto: 3, moderado: 2, medio: 2, leve: 1, baixo: 1 
-        };
-        if ((riskPriority[report.riskLevel] || 1) > (riskPriority[existing.highestRisk] || 1)) {
-          existing.highestRisk = report.riskLevel;
-        }
-      } else {
-        clusters.push({
-          id: `cluster-${report.id}`,
-          lat: report.lat,
-          lng: report.lng,
-          reports: [report],
-          count: 1,
-          highestRisk: report.riskLevel,
-          address: report.address,
-          city: report.city
-        });
-      }
-    });
-
-    // Render Heat circles and incident bubble markers with number of occurrences
+    // Render layered heatmap glow and incident bubble markers with occurrence counts
     clusters.forEach((cluster) => {
-      let color = '#3b82f6'; // blue default (leve)
-      let radius = 180;
-      let opacity = 0.5;
+      let color = '#6d4c82'; // calm plum default (baixo)
+      let radius = 380;
+      let opacity = 0.28;
 
       const isClusterGrave = cluster.highestRisk === 'grave' || cluster.highestRisk === 'urgente' || cluster.highestRisk === 'alto';
       const isClusterModerado = cluster.highestRisk === 'moderado' || cluster.highestRisk === 'medio';
 
       if (isClusterGrave) {
-        color = '#ef4444'; // Red (Grave)
-        radius = 320;
-        opacity = 0.7;
+        color = '#b05c72'; // Dusty crimson/rose (Grave)
+        radius = 560;
+        opacity = 0.36;
       } else if (isClusterModerado) {
-        color = '#f97316'; // Orange / Amber (Moderado)
-        radius = 240;
-        opacity = 0.6;
+        color = '#d97706'; // Amber (Moderado)
+        radius = 460;
+        opacity = 0.32;
       }
 
       // Bonus radius for multiple incidents in the cluster
-      radius += Math.min(180, (cluster.count - 1) * 50);
+      radius += Math.min(340, (cluster.count - 1) * 90);
 
       const isSelected = (selectedReport && cluster.reports.some(r => r.id === selectedReport.id)) || (selectedCluster?.id === cluster.id);
 
-      // Outer heat circle pulse effect
+      // Soft outer thermal dispersion ring (approximates area for privacy)
+      const outerHeatRing = L.circle([cluster.lat, cluster.lng], {
+        color: 'transparent',
+        fillColor: color,
+        fillOpacity: opacity * 0.45,
+        radius: isSelected ? radius * 1.45 : radius * 1.35,
+        stroke: false
+      });
+      layerGroup.addLayer(outerHeatRing);
+
+      // Core heat circle
       const circle = L.circle([cluster.lat, cluster.lng], {
         color: color,
         fillColor: color,
         fillOpacity: opacity,
-        radius: isSelected ? radius * 1.3 : radius,
+        radius: isSelected ? radius * 1.1 : radius * 0.85,
         stroke: true,
-        weight: isSelected ? 3 : 1.5
+        weight: isSelected ? 2.5 : 1
       });
 
       // Size calculation based on count
@@ -762,19 +744,12 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 38px;
-          height: 38px;
+          width: 34px;
+          height: 34px;
         ">
           <div style="
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: rgba(37, 99, 235, 0.35);
-            animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
-          "></div>
-          <div style="
             position: relative;
-            background: #2563eb;
+            background: #6d4c82;
             color: #ffffff;
             width: 30px;
             height: 30px;
@@ -784,7 +759,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             align-items: center;
             justify-content: center;
             font-size: 14px;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.6);
+            box-shadow: 0 4px 12px rgba(109, 76, 130, 0.45);
           ">📍</div>
         </div>
       `;
@@ -1170,10 +1145,44 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             </span>
           </div>
 
-          <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
             {filteredReports.length === 0 ? (
-              <div className="p-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
-                Nenhuma ocorrência encontrada para o filtro de gravidade selecionado.
+              <div className="p-5 text-center bg-[#faf8fb] rounded-xl border border-dashed border-[#ddd1ea] text-[#5a4e66] space-y-3">
+                <p className="text-sm font-semibold text-[#261d2e]">
+                  {dataScope === 'real_only'
+                    ? 'Ainda não há novos registros enviados por usuárias neste filtro.'
+                    : 'Nenhuma ocorrência encontrada para os filtros selecionados.'}
+                </p>
+                <p className="text-xs text-[#5a4e66] leading-relaxed">
+                  Você pode contribuir registrando uma ocorrência com localização aproximada ou fictícia para fortalecer a prevenção coletiva.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  {onOpenNewReport && (
+                    <button
+                      type="button"
+                      onClick={onOpenNewReport}
+                      className="min-h-[40px] px-4 py-2 rounded-xl bg-[#6d4c82] hover:bg-[#593c6b] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <PlusCircle className="w-4 h-4" aria-hidden="true" />
+                      <span>Registrar ocorrência</span>
+                    </button>
+                  )}
+                  {(dataScope === 'real_only' || riskFilter !== 'all' || selectedCity !== 'all' || categoryFilter !== 'all' || periodFilter !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDataScope('all');
+                        setRiskFilter('all');
+                        setSelectedCity('all');
+                        setCategoryFilter('all');
+                        setPeriodFilter('all');
+                      }}
+                      className="min-h-[40px] px-3.5 py-2 rounded-xl bg-white border border-[#e6dfee] text-xs font-medium text-[#4f3461] cursor-pointer"
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               filteredReports.map((rep) => (
@@ -1279,19 +1288,57 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             ) : (
               <>
                 <p className="text-xs font-semibold text-[#6d4c82]">
-                  Mapa preventivo em Santa Catarina
+                  Mapa de Calor preventivo em Santa Catarina
                 </p>
                 <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading mt-0.5">
                   Áreas de incidência e pontos de apoio
                 </h2>
                 <p className="text-xs sm:text-sm text-[#5a4e66]">
-                  Inclui registros ilustrativos iniciais e relatos adicionados neste aparelho, junto com delegacias e hospitais de SC.
+                  Todas as coordenadas exibidas são aproximadas ou fictícias (~600 m) para proteger quem registra. Inclui delegacias e hospitais de SC.
                 </p>
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start md:self-center">
+            {mode === 'heatmap' && (
+              <div className="flex items-center gap-1 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl p-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setDataScope('all')}
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold cursor-pointer transition-colors ${
+                    dataScope === 'all'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#4f3461] hover:bg-white/60'
+                  }`}
+                >
+                  Todos (inclui exemplos)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDataScope('real_only')}
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold cursor-pointer transition-colors ${
+                    dataScope === 'real_only'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#4f3461] hover:bg-white/60'
+                  }`}
+                >
+                  Somente novos registros
+                </button>
+              </div>
+            )}
+
+            {mode === 'heatmap' && onOpenNewReport && (
+              <button
+                type="button"
+                onClick={onOpenNewReport}
+                className="min-h-[44px] px-4 py-2 rounded-xl bg-[#b05c72] hover:bg-[#914358] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Registrar ocorrência</span>
+              </button>
+            )}
+
             {mode === 'locator' && (
               <button
                 type="button"
@@ -1590,12 +1637,12 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                         <div className="flex items-center gap-3 text-[11px] text-slate-600 pt-0.5">
                           <span className="flex items-center gap-1">
                             <Footprints className="w-3 h-3 text-purple-600" />
-                            <span>A pé: <strong>{item.estimatedTimeWalk}</strong></span>
+                            <span>A pé: <strong>~{item.walkingTimeMin} min</strong></span>
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <Car className="w-3 h-3 text-purple-600" />
-                            <span>De carro: <strong>{item.estimatedTimeDrive}</strong></span>
+                            <span>De carro: <strong>~{item.drivingTimeMin} min</strong></span>
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">

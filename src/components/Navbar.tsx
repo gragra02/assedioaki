@@ -1,6 +1,8 @@
 import React from 'react';
 import {
   Home,
+  Flame,
+  HeartHandshake,
   LifeBuoy,
   BookOpen,
   MessageCircleHeart,
@@ -18,17 +20,30 @@ interface NavbarProps {
   onQuickExit: () => void;
 }
 
-const NAV_ITEMS: Array<{
+const DESKTOP_NAV_ITEMS: Array<{
   id: AppSection;
   label: string;
-  mobileLabel: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: 'home', label: 'Início', mobileLabel: 'Início', icon: Home },
-  { id: 'help', label: 'Preciso de ajuda', mobileLabel: 'Ajuda', icon: LifeBuoy },
-  { id: 'understand', label: 'Entender', mobileLabel: 'Entender', icon: BookOpen },
-  { id: 'talk', label: 'Conversar', mobileLabel: 'Conversar', icon: MessageCircleHeart },
-  { id: 'rights', label: 'Direitos', mobileLabel: 'Direitos', icon: Scale }
+  { id: 'home', label: 'Início', icon: Home },
+  { id: 'map', label: 'Mapa de Calor', icon: Flame },
+  { id: 'community', label: 'Comunidade', icon: HeartHandshake },
+  { id: 'help', label: 'Ajuda', icon: LifeBuoy },
+  { id: 'understand', label: 'Entender', icon: BookOpen },
+  { id: 'talk', label: 'Conversar', icon: MessageCircleHeart },
+  { id: 'rights', label: 'Direitos', icon: Scale }
+];
+
+const MOBILE_NAV_ITEMS: Array<{
+  id: AppSection;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: 'home', label: 'Início', icon: Home },
+  { id: 'map', label: 'Mapa', icon: Flame },
+  { id: 'community', label: 'Comunidade', icon: HeartHandshake },
+  { id: 'talk', label: 'Conversar', icon: MessageCircleHeart },
+  { id: 'rights', label: 'Direitos', icon: Scale }
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,41 +51,41 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectSection,
   onQuickExit
 }) => {
-  const normalizedActive: AppSection =
-    activeSection === 'report' || activeSection === 'track'
+  const normalizedActive: AppSection | null =
+    activeSection === 'track'
       ? 'rights'
-      : activeSection === 'map'
-        ? 'understand'
-        : activeSection;
+      : activeSection === 'report'
+      ? null
+      : activeSection;
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#e6dfee]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+      <header className="lg:sticky lg:top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#e6dfee]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-2">
           {/* Zone 1: Single-line Brand Logo returning Home */}
           <button
             type="button"
             onClick={() => onSelectSection('home')}
-            className="flex items-center gap-2.5 min-h-[44px] pr-2 rounded-xl text-left cursor-pointer shrink-0 hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 min-h-[44px] pr-1 rounded-xl text-left cursor-pointer shrink-0 hover:opacity-90 transition-opacity"
             aria-label="Voltar para a página inicial Assédio Aki"
           >
             <img
               src={appLogo}
               alt=""
-              className="w-9 h-9 rounded-full object-cover border border-[#e6dfee] shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-[#e6dfee] shrink-0"
               referrerPolicy="no-referrer"
             />
-            <span className="font-heading font-semibold text-base sm:text-lg text-[#261d2e] whitespace-nowrap">
+            <span className="font-heading font-semibold text-base xl:text-lg text-[#261d2e] whitespace-nowrap">
               Assédio Aki
             </span>
           </button>
 
-          {/* Zone 2: Desktop Concise Primary Navigation */}
+          {/* Zone 2: Desktop Concise Primary Navigation (includes Mapa de Calor & Comunidade) */}
           <nav
             aria-label="Navegação principal"
-            className="hidden lg:flex items-center gap-1"
+            className="hidden lg:flex items-center gap-0.5 xl:gap-1 min-w-0"
           >
-            {NAV_ITEMS.map((item) => {
+            {DESKTOP_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = normalizedActive === item.id;
               return (
@@ -79,13 +94,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="button"
                   onClick={() => onSelectSection(item.id)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`min-h-[44px] px-3.5 py-2 rounded-xl text-sm inline-flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`min-h-[44px] px-2 xl:px-3.5 py-2 rounded-xl text-[13px] xl:text-sm inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-[#6d4c82] text-white font-semibold'
                       : 'text-[#4f3461] hover:bg-[#f3eef8] font-medium'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <Icon className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" aria-hidden="true" />
                   <span>{item.label}</span>
                 </button>
               );
@@ -98,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onQuickExit}
             title="Disfarçar esta tela imediatamente (tecla ESC)"
             aria-label="Sair rápido e disfarçar tela (ESC)"
-            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[#fbf2f4] hover:bg-[#f4e2e7] border border-[#e7cbd3] text-[#7f3347] text-xs sm:text-sm font-semibold inline-flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer shrink-0"
+            className="min-h-[44px] px-2.5 xl:px-3.5 py-2 rounded-xl bg-[#fbf2f4] hover:bg-[#f4e2e7] border border-[#e7cbd3] text-[#7f3347] text-xs xl:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer shrink-0"
           >
             <EyeOff className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Sair rápido</span>
@@ -109,13 +124,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* Mobile / Tablet Bottom Tab Bar (ergonomic thumb navigation, 5 destinations) */}
+      {/* Mobile / Tablet Bottom Tab Bar (ergonomic thumb navigation including Mapa & Comunidade) */}
       <nav
         aria-label="Navegação móvel"
         className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e6dfee] px-1"
       >
         <div className="max-w-lg mx-auto grid grid-cols-5 h-14">
-          {NAV_ITEMS.map((item) => {
+          {MOBILE_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = normalizedActive === item.id;
             return (
@@ -131,7 +146,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span className="truncate max-w-full">{item.mobileLabel}</span>
+                <span className="truncate max-w-full">{item.label}</span>
               </button>
             );
           })}

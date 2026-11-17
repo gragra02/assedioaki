@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Report, HarassmentType, LocationType, RiskLevel, User, ReportDraft } from '../types';
+import {
+  Report,
+  HarassmentType,
+  LocationType,
+  RiskLevel,
+  User,
+  ReportDraft,
+  ReportLocationMode
+} from '../types';
 import { encryptData } from '../lib/crypto';
 import { saveReportDraft, getReportDraft, clearReportDraft } from '../lib/draftStorage';
 import { SC_CITIES_NAMES, getCityCoordinates } from '../lib/scCities';
+import {
+  FICTITIOUS_SECTORS,
+  FictitiousSectorId,
+  quantizeCoordinate,
+  sanitizeLocationForPrivacy
+} from '../lib/geo';
 import {
   Shield,
   Lock,
@@ -19,7 +33,9 @@ import {
   X,
   AlertCircle,
   AlertTriangle,
-  FileSearch
+  FileSearch,
+  LocateFixed,
+  Compass
 } from 'lucide-react';
 
 interface ReportFormModalProps {
@@ -48,11 +64,22 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
   const [category, setCategory] = useState<HarassmentType>('importunacao_sexual');
   const [title, setTitle] = useState<string>('');
   const [locationType, setLocationType] = useState<LocationType>('transporte_publico');
+
+  // Privacy-first explicit location mode choice:
+  // 'real_approximate' vs 'fictitious'
+  const [locationMode, setLocationMode] = useState<ReportLocationMode>('fictitious');
+  const [fictitiousSector, setFictitiousSector] = useState<FictitiousSectorId>('centro');
   const [address, setAddress] = useState<string>(initialAddress || '');
   const [city, setCity] = useState<string>('Florianópolis');
   const [state] = useState<string>('SC');
-  const [lat, setLat] = useState<number>(initialLat || -27.5954);
-  const [lng, setLng] = useState<number>(initialLng || -48.548);
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(
+    typeof initialLat === 'number' && typeof initialLng === 'number'
+      ? { lat: quantizeCoordinate(initialLat), lng: quantizeCoordinate(initialLng) }
+      : null
+  );
+  const [realLocationConfirmed, setRealLocationConfirmed] = useState<boolean>(false);
+  const [isFetchingGps, setIsFetchingGps] = useState<boolean>(false);
+
   const [dateTime, setDateTime] = useState<string>(new Date().toISOString().slice(0, 16));
   const [periodOfDay, setPeriodOfDay] = useState<'manha' | 'tarde' | 'noite' | 'madrugada'>('noite');
   const [description, setDescription] = useState<string>('');
@@ -76,20 +103,31 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     }
   }, []);
 
+  const sanitizedPreview = sanitizeLocationForPrivacy({
+    mode: locationMode,
+    city,
+    cityCoordinates: getCityCoordinates(city),
+    address,
+    gpsLat: locationMode === 'real_approximate' ? gpsCoords?.lat : undefined,
+    gpsLng: locationMode === 'real_approximate' ? gpsCoords?.lng : undefined,
+    fictitiousSector
+  });
+
   const getCurrentDraftObject = (
     reason: 'aggressor_present' | 'quick_exit' | 'user_pause' = 'user_pause'
   ): ReportDraft => ({
     savedAt: new Date().toISOString(),
     step,
     isAnonymous,
+    locationMode: sanitizedPreview.locationMode,
     category,
     title,
     locationType,
-    address,
-    city,
+    address: sanitizedPreview.address,
+    city: sanitizedPreview.city,
     state,
-    lat,
-    lng,
+    lat: sanitizedPreview.lat,
+    lng: sanitizedPreview.lng,
     dateTime,
     periodOfDay,
     description,
@@ -111,14 +149,15 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
   }, [
     step,
     isAnonymous,
+    locationMode,
+    fictitiousSector,
+    gpsCoords,
     category,
     title,
     locationType,
     address,
     city,
     state,
-    lat,
-    lng,
     dateTime,
     periodOfDay,
     description,
@@ -132,15 +171,27 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
 
   const handleApplyDraft = () => {
     if (!savedDraftPrompt) return;
+    const restoredMode: ReportLocationMode =
+      savedDraftPrompt.locationMode === 'real_approximate' ? 'real_approximate' : 'fictitious';
+
     setStep(savedDraftPrompt.step || 1);
     setIsAnonymous(savedDraftPrompt.isAnonymous ?? true);
     setCategory(savedDraftPrompt.category || 'importunacao_sexual');
     setTitle(savedDraftPrompt.title || '');
     setLocationType(savedDraftPrompt.locationType || 'transporte_publico');
+    setLocationMode(restoredMode);
     setAddress(savedDraftPrompt.address || '');
     setCity(savedDraftPrompt.city || 'Florianópolis');
-    setLat(savedDraftPrompt.lat || -27.5954);
-    setLng(savedDraftPrompt.lng || -48.548);
+    if (restoredMode === 'real_approximate') {
+      setGpsCoords({
+        lat: quantizeCoordinate(savedDraftPrompt.lat),
+        lng: quantizeCoordinate(savedDraftPrompt.lng)
+      });
+      setRealLocationConfirmed(true);
+    } else {
+      setGpsCoords(null);
+      setRealLocationConfirmed(false);
+    }
     setDateTime(savedDraftPrompt.dateTime || new Date().toISOString().slice(0, 16));
     setPeriodOfDay(savedDraftPrompt.periodOfDay || 'noite');
     setDescription(savedDraftPrompt.description || '');
@@ -179,25 +230,56 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
     }, 700);
   };
 
-  const handleFetchCurrentLocation = () => {
+  const handleSelectLocationMode = (nextMode: ReportLocationMode) => {
     setGeoFeedback(null);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLat(pos.coords.latitude);
-          setLng(pos.coords.longitude);
-          setAddress(`Localização GPS (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
-          setGeoFeedback('Localização obtida com sucesso.');
-          setTimeout(() => setGeoFeedback(null), 3000);
-        },
-        () => {
-          setGeoFeedback('Não foi possível acessar o GPS. Você pode digitar o bairro ou ponto de referência.');
-        }
-      );
-    } else {
-      setGeoFeedback('Geolocalização não suportada neste navegador.');
+    setLocationMode(nextMode);
+    if (nextMode === 'fictitious') {
+      // Strictly discard any real GPS coordinates so they are never saved or sent
+      setGpsCoords(null);
+      setRealLocationConfirmed(false);
+      if (/área aproximada|gps/i.test(address)) {
+        setAddress('');
+      }
     }
   };
+
+  const handleAuthorizeRealLocation = () => {
+    setGeoFeedback(null);
+    if (!navigator.geolocation) {
+      setGeoFeedback(
+        'Seu navegador não oferece geolocalização. Use a Opção 2 para escolher uma região manualmente.'
+      );
+      return;
+    }
+
+    setIsFetchingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const approxLat = quantizeCoordinate(pos.coords.latitude);
+        const approxLng = quantizeCoordinate(pos.coords.longitude);
+        setGpsCoords({ lat: approxLat, lng: approxLng });
+        setRealLocationConfirmed(false);
+        if (!address.trim()) {
+          setAddress(`Região aproximada em ${city} (~600 m)`);
+        }
+        setIsFetchingGps(false);
+        setGeoFeedback(
+          'Localização aproximada obtida. Confira abaixo antes de avançar — suas coordenadas exatas não serão armazenadas.'
+        );
+      },
+      () => {
+        setIsFetchingGps(false);
+        setGeoFeedback(
+          'Permissão de localização não autorizada ou indisponível. Você pode digitar um ponto de referência ou usar a Opção 2 (localização fictícia).'
+        );
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  const isStep2Valid =
+    address.trim().length > 0 &&
+    (locationMode === 'fictitious' || !gpsCoords || realLocationConfirmed);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,11 +290,22 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
       const protocolId = 'ASK-2026-' + Math.floor(10000 + Math.random() * 90000);
       const userPin = secretPin.trim() || '1234';
 
+      const finalLocation = sanitizeLocationForPrivacy({
+        mode: locationMode,
+        city,
+        cityCoordinates: getCityCoordinates(city),
+        address,
+        gpsLat: locationMode === 'real_approximate' ? gpsCoords?.lat : undefined,
+        gpsLng: locationMode === 'real_approximate' ? gpsCoords?.lng : undefined,
+        fictitiousSector
+      });
+
       const sensitiveDataToEncrypt = JSON.stringify({
         title,
         description,
         aggressorDetails,
         witnesses,
+        locationMode: finalLocation.locationMode,
         userEmail: isAnonymous ? 'ANONIMO' : user?.email || 'NAO_INFORMADO',
         createdAt: new Date().toISOString()
       });
@@ -223,14 +316,15 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
         id: protocolId,
         accessKey: userPin,
         isAnonymous,
+        locationMode: finalLocation.locationMode,
         title: title || 'Relato sem título',
         category,
         locationType,
-        address: address || 'Local não informado',
-        city,
+        address: finalLocation.address,
+        city: finalLocation.city,
         state,
-        lat,
-        lng,
+        lat: finalLocation.lat,
+        lng: finalLocation.lng,
         dateTime,
         periodOfDay,
         description,
@@ -248,7 +342,11 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
             id: 'tl-' + Date.now(),
             date: new Date().toISOString(),
             title: 'Relato salvo no aplicativo',
-            note: `Registrado com protocolo ${protocolId} e proteção AES-GCM (hash ${encrypted.hash.slice(0, 12)}...).`,
+            note: `Registrado com protocolo ${protocolId} (${
+              finalLocation.locationMode === 'fictitious'
+                ? 'localização fictícia escolhida pela usuária'
+                : 'área aproximada protegida'
+            }) e proteção AES-GCM.`,
             actor: 'Sistema AssédioAki'
           }
         ],
@@ -351,7 +449,8 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                 Você tem um rascunho salvo ({`Etapa ${savedDraftPrompt.step} de 4`})
               </h2>
               <p className="text-xs text-[#5a4e66]">
-                Salvo em {new Date(savedDraftPrompt.savedAt).toLocaleString('pt-BR')} · {savedDraftPrompt.title || 'Relato em andamento'}
+                Salvo em {new Date(savedDraftPrompt.savedAt).toLocaleString('pt-BR')} ·{' '}
+                {savedDraftPrompt.title || 'Relato em andamento'}
               </p>
             </div>
             <button
@@ -383,13 +482,6 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
               <span>Descartar</span>
             </button>
           </div>
-        </div>
-      )}
-
-      {geoFeedback && (
-        <div className="p-3 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl text-xs sm:text-sm text-[#4f3461] flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-          <span>{geoFeedback}</span>
         </div>
       )}
 
@@ -559,9 +651,151 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
             </div>
           )}
 
-          {/* STEP 2 */}
+          {/* STEP 2 — Privacy-preserving Location Choice */}
           {step === 2 && (
             <div className="space-y-5">
+              {/* Reassurance Note */}
+              <div className="p-4 rounded-xl bg-[#f3eef8] border border-[#ddd1ea] text-xs sm:text-sm text-[#493d54] leading-relaxed">
+                <strong className="text-[#261d2e] block mb-1">
+                  Você decide como informar a localização
+                </strong>
+                Você pode escolher uma localização aproximada ou fictícia para proteger sua identidade. A localização exibida no mapa não precisa ser o local exato onde o ocorrido aconteceu.
+              </div>
+
+              {/* Explicit Choice: Option 1 vs Option 2 */}
+              <div className="space-y-2">
+                <span className="block text-xs font-semibold text-[#261d2e]">
+                  Como deseja definir o local para o mapa?
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectLocationMode('real_approximate')}
+                    aria-pressed={locationMode === 'real_approximate'}
+                    className={`p-4 rounded-xl border text-left transition-colors cursor-pointer space-y-1.5 ${
+                      locationMode === 'real_approximate'
+                        ? 'bg-[#f3eef8] border-[#6d4c82] ring-1 ring-[#6d4c82] text-[#261d2e]'
+                        : 'bg-[#faf8fb] hover:bg-[#f3eef8]/50 border-[#e6dfee] text-[#493d54]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#261d2e]">
+                      <LocateFixed className="w-4 h-4 text-[#6d4c82] shrink-0" aria-hidden="true" />
+                      <span>OPÇÃO 1 — USAR MINHA LOCALIZAÇÃO ATUAL</span>
+                    </div>
+                    <p className="text-xs text-[#5a4e66] leading-snug">
+                      Pede sua autorização e arredonda a área (~600 m) para nunca exibir seu ponto exato.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectLocationMode('fictitious')}
+                    aria-pressed={locationMode === 'fictitious'}
+                    className={`p-4 rounded-xl border text-left transition-colors cursor-pointer space-y-1.5 ${
+                      locationMode === 'fictitious'
+                        ? 'bg-[#f3eef8] border-[#6d4c82] ring-1 ring-[#6d4c82] text-[#261d2e]'
+                        : 'bg-[#faf8fb] hover:bg-[#f3eef8]/50 border-[#e6dfee] text-[#493d54]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#261d2e]">
+                      <Compass className="w-4 h-4 text-[#6d4c82] shrink-0" aria-hidden="true" />
+                      <span>OPÇÃO 2 — ESCOLHER UMA LOCALIZAÇÃO FICTÍCIA</span>
+                    </div>
+                    <p className="text-xs text-[#5a4e66] leading-snug">
+                      Não acessa seu GPS. Você escolhe manualmente outra cidade, setor ou ponto de referência.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Option 1 Panel: Real Approximate Location */}
+              {locationMode === 'real_approximate' && (
+                <div className="p-4 rounded-xl bg-[#faf8fb] border border-[#ddd1ea] space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-[#261d2e]">
+                        Localização aproximada com autorização
+                      </p>
+                      <p className="text-xs text-[#5a4e66]">
+                        Ao autorizar, aplicamos arredondamento espacial (~600 m) e não armazenamos coordenadas exatas do seu dispositivo.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAuthorizeRealLocation}
+                      disabled={isFetchingGps}
+                      className="min-h-[44px] px-4 py-2 rounded-xl bg-[#6d4c82] hover:bg-[#593c6b] text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>
+                        {isFetchingGps
+                          ? 'Obtendo área aproximada...'
+                          : 'Autorizar localização aproximada'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {geoFeedback && (
+                    <div className="p-3 bg-white border border-[#ddd1ea] rounded-xl text-xs text-[#4f3461] flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>{geoFeedback}</span>
+                    </div>
+                  )}
+
+                  {gpsCoords && (
+                    <div className="p-3.5 bg-white border border-[#cde0d4] rounded-xl space-y-2 text-xs text-[#26543b]">
+                      <p className="font-semibold">
+                        Área aproximada preparada: {city} (grade protegida ~600 m)
+                      </p>
+                      <label className="flex items-start gap-2 cursor-pointer text-[#261d2e]">
+                        <input
+                          type="checkbox"
+                          checked={realLocationConfirmed}
+                          onChange={(e) => setRealLocationConfirmed(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 accent-[#6d4c82] rounded"
+                        />
+                        <span>
+                          Revisei o bairro/referência abaixo e confirmo o envio desta área aproximada para o mapa.
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Option 2 Panel: Fictitious Manual Selection */}
+              {locationMode === 'fictitious' && (
+                <div className="p-4 rounded-xl bg-[#faf8fb] border border-[#ddd1ea] space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#26543b]">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span>
+                      Modo localização fictícia ativo — seu GPS não será acessado nem registrado em nenhum momento.
+                    </span>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="fictitious-sector-select"
+                      className="block text-xs font-semibold text-[#261d2e] mb-1"
+                    >
+                      Setor fictício ou região aproximada do município selecionado
+                    </label>
+                    <select
+                      id="fictitious-sector-select"
+                      value={fictitiousSector}
+                      onChange={(e) => setFictitiousSector(e.target.value as FictitiousSectorId)}
+                      className="w-full min-h-[44px] px-3 py-2 bg-white border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
+                    >
+                      {FICTITIOUS_SECTORS.map((sec) => (
+                        <option key={sec.id} value={sec.id}>
+                          {sec.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label htmlFor="report-location-type" className="block text-xs font-semibold text-[#261d2e] mb-1">
                   Tipo de ambiente
@@ -584,24 +818,20 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
               </div>
 
               <div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                  <label htmlFor="report-address-input" className="block text-xs font-semibold text-[#261d2e]">
-                    Bairro, rua aproximada ou ponto de referência
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleFetchCurrentLocation}
-                    className="min-h-[36px] text-xs text-[#6d4c82] hover:underline inline-flex items-center gap-1 cursor-pointer font-semibold"
-                  >
-                    <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Usar localização aproximada (GPS)</span>
-                  </button>
-                </div>
+                <label htmlFor="report-address-input" className="block text-xs font-semibold text-[#261d2e] mb-1">
+                  {locationMode === 'fictitious'
+                    ? 'Bairro ou ponto de referência fictício/aproximado'
+                    : 'Bairro ou ponto de referência aproximado'}
+                </label>
                 <input
                   id="report-address-input"
                   type="text"
                   required
-                  placeholder="Evite colocar o número exato da sua casa; prefira rua ou referência próxima"
+                  placeholder={
+                    locationMode === 'fictitious'
+                      ? 'Ex: Região Central ou Praça pública fictícia para proteção'
+                      : 'Evite colocar o número exato da sua casa; informe apenas bairro ou referência'
+                  }
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
@@ -611,18 +841,14 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="report-city-select" className="block text-xs font-semibold text-[#261d2e] mb-1">
-                    Município em Santa Catarina
+                    {locationMode === 'fictitious'
+                      ? 'Município escolhido (fictício ou de referência)'
+                      : 'Município em Santa Catarina'}
                   </label>
                   <select
                     id="report-city-select"
                     value={city}
-                    onChange={(e) => {
-                      const newCity = e.target.value;
-                      setCity(newCity);
-                      const coords = getCityCoordinates(newCity);
-                      setLat(coords[0]);
-                      setLng(coords[1]);
-                    }}
+                    onChange={(e) => setCity(e.target.value)}
                     className="w-full min-h-[44px] px-3 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e] cursor-pointer"
                   >
                     {SC_CITIES_NAMES.map((cName) => (
@@ -675,7 +901,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  disabled={!address.trim()}
+                  disabled={!isStep2Valid}
                   onClick={() => setStep(3)}
                   className="min-h-[44px] px-5 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
                 >
@@ -816,10 +1042,16 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                   <span>Como seus dados ficam protegidos</span>
                 </div>
                 <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                  O texto completo do relato, as características do autor e as testemunhas são criptografados com o seu PIN antes de serem guardados. Apenas quem tem o número de protocolo e o PIN consegue abrir esses detalhes na aba “Acompanhar protocolo”.
+                  Localização definida para o mapa:{' '}
+                  <strong>
+                    {sanitizedPreview.locationMode === 'fictitious'
+                      ? `Fictícia/aproximada (${sanitizedPreview.address}, ${sanitizedPreview.city})`
+                      : `Área aproximada (${sanitizedPreview.address}, ${sanitizedPreview.city})`}
+                  </strong>
+                  . Coordenadas exatas não são publicadas nem guardadas.
                 </p>
                 <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                  Para exibir o ponto no mapa em Santa Catarina, ficam visíveis apenas a categoria, a cidade, o bairro/referência aproximada e o título curto. Por isso, não escreva seu nome ou endereço residencial exato no título.
+                  O texto completo do relato, características do autor e testemunhas são criptografados com seu PIN.
                 </p>
               </div>
 
@@ -885,6 +1117,14 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
             </div>
             <p className="text-xs text-[#5a4e66]">
               PIN escolhido: <strong className="text-[#261d2e] font-mono">{submittedReport.accessKey}</strong>
+            </p>
+            <p className="text-xs text-[#6b5e77]">
+              Modo de localização:{' '}
+              <strong>
+                {submittedReport.locationMode === 'fictitious'
+                  ? 'Localização fictícia (GPS não coletado)'
+                  : 'Localização aproximada protegida'}
+              </strong>
             </p>
           </div>
 

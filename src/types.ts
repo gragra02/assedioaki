@@ -79,10 +79,13 @@ export interface ReportComment {
   timeZone?: string;
 }
 
+export type ReportLocationMode = 'real_approximate' | 'fictitious';
+
 export interface Report {
   id: string; // e.g. ASK-2026-89412
   accessKey: string; // PIN for decryption/tracking
   isAnonymous: boolean;
+  locationMode?: ReportLocationMode;
   title: string;
   category: HarassmentType;
   locationType: LocationType;
@@ -139,6 +142,7 @@ export interface ReportDraft {
   savedAt: string;
   step: number;
   isAnonymous: boolean;
+  locationMode?: ReportLocationMode;
   category: HarassmentType;
   title: string;
   locationType: LocationType;
@@ -157,4 +161,47 @@ export interface ReportDraft {
   attachmentName: string;
   reasonForPause?: 'aggressor_present' | 'quick_exit' | 'user_pause';
 }
+
+export type CommunityCategory =
+  | 'apoio_emocional'
+  | 'compartilhar_experiencia'
+  | 'alerta_regiao'
+  | 'duvida_direitos'
+  | 'superacao';
+
+export type CommunityFlagReason =
+  | 'dados_pessoais'
+  | 'conteudo_ofensivo'
+  | 'spam_propaganda'
+  | 'risco_seguranca';
+
+export interface CommunityReply {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorLabel: string;
+  isAnonymous: boolean;
+  content: string;
+  createdAt: string;
+  flagCount?: number;
+  hiddenByModeration?: boolean;
+}
+
+export interface CommunityPost {
+  id: string;
+  authorId: string;
+  authorLabel: string;
+  isAnonymous: boolean;
+  category: CommunityCategory;
+  title: string;
+  content: string;
+  city?: string;
+  createdAt: string;
+  supportCount: number;
+  replies: CommunityReply[];
+  flagCount: number;
+  flagReasons: CommunityFlagReason[];
+  moderationStatus: 'published' | 'flagged' | 'hidden';
+}
+
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Report, ReportComment, User, AccessLog } from '../types';
+import { Report, ReportComment, User, AccessLog, CommunityPost } from '../types';
 import { 
   getAdminConfig, changeAdminPassword, getRegisteredUsers, deleteUserById, toggleUserBlockStatus 
 } from '../lib/adminAuth';
@@ -8,7 +8,7 @@ import {
 } from '../lib/accessLogs';
 import { 
   ShieldAlert, ShieldCheck, Lock, Trash2, FileText, Download, Printer, 
-  Users, MessageSquare, AlertTriangle, Search, CheckCircle2, X, RefreshCw, KeyRound, Globe, Clock, Ban
+  Users, MessageSquare, AlertTriangle, Search, CheckCircle2, X, RefreshCw, KeyRound, Globe, Clock, Ban, Flag, EyeOff
 } from 'lucide-react';
 
 interface AdminPanelModalProps {
@@ -17,6 +17,8 @@ interface AdminPanelModalProps {
   reports: Report[];
   onDeleteReport: (reportId: string) => void;
   onDeleteComment: (reportId: string, commentId: string) => void;
+  communityPosts?: CommunityPost[];
+  onModerateCommunityPost?: (postId: string, action: 'approve' | 'hide' | 'delete') => void;
   currentUser: User | null;
 }
 
@@ -26,9 +28,11 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   reports,
   onDeleteReport,
   onDeleteComment,
+  communityPosts = [],
+  onModerateCommunityPost,
   currentUser
 }) => {
-  const [activeTab, setActiveTab] = useState<'password' | 'reports' | 'comments' | 'users' | 'logs'>('reports');
+  const [activeTab, setActiveTab] = useState<'password' | 'reports' | 'comments' | 'community' | 'users' | 'logs'>('reports');
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -248,6 +252,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('community')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'community'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+            }`}
+          >
+            <Flag className="w-4 h-4" />
+            <span>
+              Comunidade ({communityPosts.filter((p) => p.moderationStatus === 'flagged').length} denúncias)
+            </span>
+          </button>
+
+          <button
             onClick={() => { setActiveTab('users'); refreshUsers(); }}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'users'
@@ -440,6 +458,106 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: COMUNIDADE (MODERAÇÃO) */}
+          {activeTab === 'community' && (
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <h3 className="text-sm font-extrabold text-slate-900">
+                  Moderação da Comunidade — Vozes que se Apoiam
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Analise publicações sinalizadas por dados pessoais, ofensas ou risco, e decida manter, ocultar ou excluir.
+                </p>
+              </div>
+
+              {communityPosts.length === 0 ? (
+                <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                  Nenhuma publicação registrada na comunidade até o momento.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {[...communityPosts]
+                    .sort((a, b) => b.flagCount - a.flagCount)
+                    .map((post) => (
+                      <div
+                        key={post.id}
+                        className={`bg-white border rounded-2xl p-4 shadow-2xs space-y-2.5 ${
+                          post.moderationStatus === 'flagged'
+                            ? 'border-amber-300 bg-amber-50/30'
+                            : post.moderationStatus === 'hidden'
+                              ? 'border-rose-200 bg-rose-50/30'
+                              : 'border-slate-200'
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-extrabold text-slate-900">
+                              {post.title}
+                            </span>
+                            <span className="text-[11px] text-slate-600">
+                              por {post.authorLabel}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                post.moderationStatus === 'flagged'
+                                  ? 'bg-amber-100 text-amber-900'
+                                  : post.moderationStatus === 'hidden'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-emerald-100 text-emerald-800'
+                              }`}
+                            >
+                              {post.moderationStatus === 'flagged'
+                                ? `Sinalizada (${post.flagCount}x)`
+                                : post.moderationStatus === 'hidden'
+                                  ? 'Oculta'
+                                  : 'Publicada'}
+                            </span>
+                          </div>
+
+                          {onModerateCommunityPost && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {post.moderationStatus !== 'published' && (
+                                <button
+                                  type="button"
+                                  onClick={() => onModerateCommunityPost(post.id, 'approve')}
+                                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 rounded-lg text-xs font-bold cursor-pointer inline-flex items-center gap-1"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Aprovar</span>
+                                </button>
+                              )}
+                              {post.moderationStatus !== 'hidden' && (
+                                <button
+                                  type="button"
+                                  onClick={() => onModerateCommunityPost(post.id, 'hide')}
+                                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-200 rounded-lg text-xs font-bold cursor-pointer inline-flex items-center gap-1"
+                                >
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span>Ocultar</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => onModerateCommunityPost(post.id, 'delete')}
+                                className="px-2.5 py-1 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 rounded-lg text-xs font-bold cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                          {post.content}
+                        </p>
+                      </div>
+                    ))}
                 </div>
               )}
             </div>
