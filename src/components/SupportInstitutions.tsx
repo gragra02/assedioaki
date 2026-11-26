@@ -219,10 +219,10 @@ export const SupportInstitutions: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading">
-              Rede pública de acolhimento em Santa Catarina
+              Quem pode me ajudar em Santa Catarina
             </h2>
             <p className="text-sm text-[#5a4e66]">
-              Escolha uma instituição abaixo para ver telefones, e-mails e como solicitar atendimento gratuito.
+              Você pode conversar com profissionais e redes gratuitas de apoio em Santa Catarina sem precisar fazer denúncia policial antes, se não quiser.
             </p>
           </div>
         </div>

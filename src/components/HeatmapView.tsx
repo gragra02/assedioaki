@@ -1425,10 +1425,10 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                   Ajuda perto de você em Santa Catarina
                 </p>
                 <h2 className="text-lg sm:text-2xl font-semibold text-[#261d2e] font-heading">
-                  Delegacia da mulher ou hospital mais perto de você
+                  Preciso de ajuda agora
                 </h2>
                 <p className="text-xs sm:text-sm text-[#5a4e66] max-w-2xl leading-relaxed">
-                  Veja no mapa as DPCAMIs / DEAMs (delegacias que atendem mulheres) e os hospitais 24h em Santa Catarina.
+                  Respire com calma e veja abaixo a delegacia da mulher ou o hospital 24h mais perto de você. Se houver perigo imediato, ligue 190 (Polícia Militar) ou 180 (Central da Mulher, gratuita e 24h).
                 </p>
               </>
             ) : (
@@ -1437,10 +1437,10 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                   Mapa de segurança em Santa Catarina
                 </p>
                 <h2 className="text-lg sm:text-2xl font-semibold text-[#261d2e] font-heading">
-                  Onde há mais relatos e onde você pode buscar ajuda
+                  Você não está sozinha
                 </h2>
                 <p className="text-xs sm:text-sm text-[#5a4e66] max-w-2xl leading-relaxed">
-                  Os pontos no mapa são aproximados, para proteger quem conta o que viveu. Aqui você também encontra delegacias e hospitais de SC.
+                  Estamos aqui para ajudar você a encontrar orientação e apoio sem precisar se identificar. Os pontos no mapa são aproximados para proteger quem conta o que viveu, e aqui você também encontra delegacias e hospitais de SC.
                 </p>
               </>
             )}
@@ -1474,15 +1474,8 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               </div>
             )}
 
-            {mode === 'heatmap' && onOpenNewReport && (
-              <button
-                type="button"
-                onClick={onOpenNewReport}
-                className="min-h-[44px] px-4 py-2 rounded-xl bg-[#b05c72] hover:bg-[#914358] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                <PlusCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span>Contar o que aconteceu</span>
-              </button>
+            {mode === 'heatmap' && (
+              <div id="floating-report-btn-slot" className="min-h-[44px] flex items-center" />
             )}
 
             {mode === 'locator' && (

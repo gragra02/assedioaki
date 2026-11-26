@@ -163,10 +163,10 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading">
-              Lugares de ajuda e contatos em Santa Catarina
+              Onde buscar atendimento em Santa Catarina
             </h2>
             <p className="text-sm text-[#5a4e66]">
-              DPCAMI / DEAM (delegacias que atendem mulheres), hospitais 24h, plantão policial e Delegacia Virtual.
+              Você tem direito à proteção, ao respeito e ao atendimento gratuito. Escolha no seu ritmo: DPCAMI / DEAM (delegacias que atendem mulheres), hospitais 24h, plantão policial ou Delegacia Virtual.
             </p>
           </div>
         </div>

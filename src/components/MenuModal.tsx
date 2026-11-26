@@ -344,7 +344,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({
     { id: 'my_reports', label: 'Meus relatos', icon: FileText },
     { id: 'suspect_profiles', label: 'Perfis denunciados', icon: ShieldAlert },
     { id: 'privacy', label: 'Privacidade e limites', icon: ShieldCheck },
-    { id: 'identify', label: 'Identificar violência', icon: BookOpen },
+    { id: 'identify', label: 'Entender o que vivi', icon: BookOpen },
     { id: 'about', label: 'Sobre o projeto', icon: Info },
     { id: 'faqs', label: 'Dúvidas frequentes', icon: HelpCircle },
     { id: 'contact', label: 'Contato', icon: Mail },
@@ -438,10 +438,10 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   Entenda de forma simples
                 </p>
                 <h4 className="text-lg font-semibold text-[#261d2e] font-heading mt-0.5">
-                  O que você viveu tem nome
+                  Entender o que vivi
                 </h4>
                 <p className="text-xs sm:text-sm text-[#5a4e66] mt-1">
-                  Escolha abaixo a situação mais parecida com o que aconteceu para entender melhor como a lei protege você.
+                  Nem sempre é fácil dar nome ao que aconteceu. Se uma atitude deixou você constrangida, assustada ou sem liberdade, seus sentimentos são válidos — escolha abaixo a situação mais parecida para ver como a lei protege você.
                 </p>
               </div>
 

@@ -770,7 +770,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
           className="w-full min-h-[42px] px-3.5 py-2 bg-white border border-[#e6dfee] rounded-xl text-xs sm:text-sm text-[#261d2e]"
         />
         <p className="text-[11px] text-[#5a4e66] leading-snug">
-          Se informado, esse perfil aparece parcialmente protegido em <strong>Menu → Perfis denunciados</strong> para ajudar outras mulheres, sem nunca mostrar quem enviou.
+          Se informado, esse perfil aparece parcialmente protegido em <strong>Mais → Perfis denunciados</strong> para ajudar outras mulheres, sem nunca mostrar quem enviou.
         </p>
       </div>
     </div>
@@ -1705,7 +1705,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
               PIN escolhido: <strong className="text-[#261d2e] font-mono">{submittedReport.accessKey}</strong>
             </p>
             <p className="text-xs text-[#6b5e77]">
-              Você também pode consultar, editar ou apagar este relato quando quiser em <strong>Menu → Meus relatos</strong>.
+              Você também pode consultar, editar ou apagar este relato quando quiser em <strong>Mais → Meus relatos</strong>.
             </p>
           </div>
 
