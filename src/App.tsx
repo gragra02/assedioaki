@@ -9,7 +9,6 @@ import { MenuModal, MenuModalSection } from './components/MenuModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
 import { SupportNetwork } from './components/SupportNetwork';
 import { SupportInstitutions } from './components/SupportInstitutions';
-import { FloatingReportButton } from './components/FloatingReportButton';
 import { FloatingHelpButton } from './components/FloatingHelpButton';
 import { SafeSpaceDeclarationModal } from './components/SafeSpaceDeclarationModal';
 import { INITIAL_REPORTS, SUPPORT_CENTERS } from './lib/initialData';
@@ -710,15 +709,6 @@ export default function App() {
           </div>
         </div>
       </footer>
-
-      {/* Original Floating Report Button (docks in Heatmap header or floats on scroll/other tabs) */}
-      <FloatingReportButton
-        isVisible={activeSection !== 'report' && !isMasked && !isSafeSpaceOpen}
-        onOpenReport={() => {
-          setEditingReport(null);
-          navigateTo('report');
-        }}
-      />
 
       {/* Permanent Bottom-Right Quick Help Floating Button (pointing to 'locator') */}
       <FloatingHelpButton

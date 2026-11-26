@@ -1474,10 +1474,6 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               </div>
             )}
 
-            {mode === 'heatmap' && (
-              <div id="floating-report-btn-slot" className="min-h-[44px] flex items-center" />
-            )}
-
             {mode === 'locator' && (
               <button
                 type="button"
