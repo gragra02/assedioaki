@@ -182,25 +182,19 @@ export const FloatingReportButton: React.FC<FloatingReportButtonProps> = ({
           if (e.touches[0]) handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
         }}
         onClick={handleClick}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-extrabold shadow-lg shadow-red-700/30 ring-4 ring-red-400/40 border-2 border-white cursor-pointer active:scale-95 transition-all ${
-          isDragging ? 'opacity-90 scale-105 shadow-2xl' : 'hover:scale-[1.02]'
+        className={`min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#b05c72] hover:bg-[#914358] text-white font-semibold shadow-md shadow-[#261d2e]/15 border border-white/90 cursor-pointer active:scale-95 transition-all ${
+          isDragging ? 'opacity-90 scale-105 shadow-xl' : 'hover:scale-[1.01]'
         }`}
-        title="Clique para registrar denúncia a qualquer momento (Arraste para mover na tela)"
+        title="Toque para contar o que aconteceu a qualquer momento (arraste para mover na tela)"
       >
-        {/* Subtle pulsating beacon */}
-        <span className="relative flex h-2.5 w-2.5 shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-        </span>
-
-        <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0 drop-shadow" />
+        <PlusCircle className="w-4 h-4 text-white shrink-0" aria-hidden="true" />
         
-        <span className="text-xs sm:text-sm font-black tracking-wide drop-shadow-sm whitespace-nowrap">
-          Registrar Denúncia
+        <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
+          Contar o que aconteceu
         </span>
 
         {/* Drag handle icon */}
-        <GripVertical className="w-3.5 h-3.5 text-red-200 opacity-60 group-hover:opacity-100 shrink-0 ml-0.5 cursor-grab active:cursor-grabbing" />
+        <GripVertical className="w-3.5 h-3.5 text-white/70 group-hover:text-white shrink-0 ml-0.5 cursor-grab active:cursor-grabbing" aria-hidden="true" />
       </div>
     </div>
   );

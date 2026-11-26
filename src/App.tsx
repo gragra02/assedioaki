@@ -7,11 +7,9 @@ import { ReportFormModal } from './components/ReportFormModal';
 import { CaseTracker } from './components/CaseTracker';
 import { MenuModal, MenuModalSection } from './components/MenuModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
-import { HomeView, AppSection } from './components/HomeView';
-import { HelpNowView } from './components/HelpNowView';
-import { UnderstandView } from './components/UnderstandView';
-import { TalkSupportView } from './components/TalkSupportView';
-import { RightsView } from './components/RightsView';
+import { SupportNetwork } from './components/SupportNetwork';
+import { SupportInstitutions } from './components/SupportInstitutions';
+import { FloatingReportButton } from './components/FloatingReportButton';
 import { FloatingHelpButton } from './components/FloatingHelpButton';
 import { SafeSpaceDeclarationModal } from './components/SafeSpaceDeclarationModal';
 import { INITIAL_REPORTS, SUPPORT_CENTERS } from './lib/initialData';
@@ -26,13 +24,11 @@ import { saveRegisteredUser, isUserBlocked } from './lib/adminAuth';
 import appLogo from './assets/logo.jpg';
 
 const VALID_SECTIONS: NavSection[] = [
-  'home',
-  'map',
-  'help',
-  'understand',
-  'talk',
-  'rights',
   'report',
+  'heatmap',
+  'locator',
+  'authorities',
+  'support',
   'track'
 ];
 
@@ -43,7 +39,7 @@ export default function App() {
     if (viewParam && VALID_SECTIONS.includes(viewParam)) {
       return viewParam;
     }
-    return 'home';
+    return 'heatmap';
   });
 
   const [isMasked, setIsMasked] = useState<boolean>(false);
@@ -488,7 +484,7 @@ export default function App() {
         }}
         onSelectReport={(reportId) => {
           setIsMenuModalOpen(false);
-          navigateTo('map');
+          navigateTo('heatmap');
           setFocusedReportRequest({ reportId, nonce: Date.now() });
         }}
         onTrackReport={(reportId) => {
@@ -528,30 +524,9 @@ export default function App() {
       />
 
       {/* Main Container Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-32 lg:pb-24 w-full flex-1">
-        {activeSection === 'home' && (
-          <HomeView
-            reports={reports}
-            totalSupportCenters={SUPPORT_CENTERS.length}
-            onNavigate={(sec: AppSection) => navigateTo(sec)}
-            onOpenNewReport={() => {
-              setEditingReport(null);
-              navigateTo('report');
-            }}
-            onOpenPrivacy={() => openInfoModal('privacy')}
-            onOpenSafeSpaceDeclaration={() => setIsSafeSpaceOpen(true)}
-          />
-        )}
-
-        {activeSection === 'map' && (
-          <div className="max-w-6xl mx-auto space-y-4">
-            <button
-              type="button"
-              onClick={() => navigateTo('home')}
-              className="min-h-[44px] px-3 py-2 -ml-3 rounded-xl text-sm font-medium text-[#5b3d6e] hover:bg-[#f3eef8] transition-colors cursor-pointer"
-            >
-              ← Voltar para o início
-            </button>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-24 w-full flex-1">
+        {activeSection === 'heatmap' && (
+          <div className="max-w-6xl mx-auto">
             <HeatmapView
               reports={reports}
               supportCenters={SUPPORT_CENTERS}
@@ -569,63 +544,36 @@ export default function App() {
           </div>
         )}
 
-        {activeSection === 'help' && (
-          <HelpNowView
-            reports={reports}
-            supportCenters={SUPPORT_CENTERS}
-            currentUser={user}
-            onAddComment={handleAddComment}
-            onNewReportAtLocation={handleNewReportAtLocation}
-            onSelectReportForTrack={handleSelectReportForTrack}
-            onOpenReportForm={() => {
-              setEditingReport(null);
-              navigateTo('report');
-            }}
-            onBackHome={() => navigateTo('home')}
-          />
+        {activeSection === 'locator' && (
+          <div className="max-w-6xl mx-auto">
+            <HeatmapView
+              reports={reports}
+              supportCenters={SUPPORT_CENTERS}
+              mode="locator"
+              currentUser={user}
+              onAddComment={handleAddComment}
+              onNewReportAtLocation={handleNewReportAtLocation}
+              onSelectReportForTrack={handleSelectReportForTrack}
+            />
+          </div>
         )}
 
-        {activeSection === 'understand' && (
-          <UnderstandView
-            reports={reports}
-            supportCenters={SUPPORT_CENTERS}
-            currentUser={user}
-            onAddComment={handleAddComment}
-            onNewReportAtLocation={handleNewReportAtLocation}
-            onSelectReportForTrack={handleSelectReportForTrack}
-            onGoToTalk={() => navigateTo('talk')}
-            onBackHome={() => navigateTo('home')}
-          />
+        {activeSection === 'authorities' && (
+          <SupportNetwork supportCenters={SUPPORT_CENTERS} />
         )}
 
-        {activeSection === 'talk' && (
-          <TalkSupportView
-            supportCenters={SUPPORT_CENTERS}
-            onBackHome={() => navigateTo('home')}
-          />
-        )}
-
-        {activeSection === 'rights' && (
-          <RightsView
-            reports={reports}
-            selectedTrackId={selectedTrackId}
-            onOpenReportForm={() => {
-              setEditingReport(null);
-              navigateTo('report');
-            }}
-            onAddTimelineNote={handleAddTimelineNote}
-            onBackHome={() => navigateTo('home')}
-          />
+        {activeSection === 'support' && (
+          <SupportInstitutions />
         )}
 
         {activeSection === 'track' && (
           <div className="max-w-4xl mx-auto space-y-4">
             <button
               type="button"
-              onClick={() => navigateTo('home')}
+              onClick={() => navigateTo('heatmap')}
               className="min-h-[44px] px-3 py-2 -ml-3 rounded-xl text-sm font-medium text-[#5b3d6e] hover:bg-[#f3eef8] transition-colors cursor-pointer"
             >
-              ← Voltar para o início
+              ← Voltar para o Mapa de Calor
             </button>
             <CaseTracker
               reports={reports}
@@ -646,7 +594,7 @@ export default function App() {
             onUpdateSuccess={handleUpdateReport}
             onCancel={() => {
               setEditingReport(null);
-              navigateTo('home');
+              navigateTo('heatmap');
             }}
             onEmergencyExit={() => setIsMasked(true)}
             onGoToTrack={(protocolId) => {
@@ -666,7 +614,7 @@ export default function App() {
       </main>
 
       {/* Calm Institutional & Privacy Footer */}
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 w-full mb-28 lg:mb-16">
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 w-full mb-20 lg:mb-16">
         <div className="bg-white border border-[#e6dfee] rounded-2xl p-6 sm:p-7 space-y-4 text-center">
           <div className="flex items-center justify-center gap-2.5">
             <img
@@ -690,6 +638,13 @@ export default function App() {
           </p>
 
           <div className="pt-4 border-t border-[#efe9f4] flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+            <button
+              type="button"
+              onClick={() => openInfoModal('identify')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
+            >
+              Entender o que vivi
+            </button>
             <button
               type="button"
               onClick={() => openInfoModal('my_reports')}
@@ -756,10 +711,19 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Permanent Bottom-Right Quick Help Floating Button (all pages) */}
+      {/* Original Floating Report Button (docks in Heatmap header or floats on scroll/other tabs) */}
+      <FloatingReportButton
+        isVisible={activeSection !== 'report' && !isMasked && !isSafeSpaceOpen}
+        onOpenReport={() => {
+          setEditingReport(null);
+          navigateTo('report');
+        }}
+      />
+
+      {/* Permanent Bottom-Right Quick Help Floating Button (pointing to 'locator') */}
       <FloatingHelpButton
-        onGoToHelp={() => navigateTo('help')}
-        onGoToLocator={() => navigateTo('help')}
+        onGoToHelp={() => navigateTo('locator')}
+        onGoToLocator={() => navigateTo('locator')}
         onQuickExit={() => setIsMasked(true)}
         isHidden={isMasked || isSafeSpaceOpen}
       />
