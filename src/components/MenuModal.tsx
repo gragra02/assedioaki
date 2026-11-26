@@ -118,7 +118,7 @@ const maskFourLettersInSocialProfile = (
 
 export const MenuModal: React.FC<MenuModalProps> = ({
   isOpen,
-  initialSection = 'identify',
+  initialSection,
   reports = [],
   myReportIds = [],
   currentUser = null,
@@ -129,12 +129,20 @@ export const MenuModal: React.FC<MenuModalProps> = ({
   onEditReport,
   onDeleteReport
 }) => {
-  const [activeSection, setActiveSection] = useState<MenuModalSection>(initialSection);
+  const [activeSection, setActiveSection] = useState<MenuModalSection>(initialSection ?? 'identify');
+  const [mobileView, setMobileView] = useState<'list' | 'content'>(
+    initialSection ? 'content' : 'list'
+  );
+  const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
+  const contentPanelRef = React.useRef<HTMLDivElement | null>(null);
 
   // Sync section when initialSection changes
   React.useEffect(() => {
     if (initialSection) {
       setActiveSection(initialSection);
+      setMobileView('content');
+    } else {
+      setMobileView('list');
     }
     setConfirmDeleteReportId(null);
   }, [initialSection, isOpen]);
@@ -352,15 +360,47 @@ export const MenuModal: React.FC<MenuModalProps> = ({
     { id: 'donate', label: 'Apoiar', icon: HeartHandshake },
   ];
 
+  const selectSection = (sectionId: MenuModalSection) => {
+    setActiveSection(sectionId);
+    setMobileView('content');
+    if (contentPanelRef.current) {
+      contentPanelRef.current.scrollTop = 0;
+    }
+  };
+
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, idx: number) => {
+    const total = menuNavItems.length;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextIdx = (idx + 1) % total;
+      selectSection(menuNavItems[nextIdx].id);
+      tabRefs.current[nextIdx]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevIdx = (idx - 1 + total) % total;
+      selectSection(menuNavItems[prevIdx].id);
+      tabRefs.current[prevIdx]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      selectSection(menuNavItems[0].id);
+      tabRefs.current[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      const lastIdx = total - 1;
+      selectSection(menuNavItems[lastIdx].id);
+      tabRefs.current[lastIdx]?.focus();
+    }
+  };
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Informações e privacidade do aplicativo"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#261d2e]/45 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#261d2e]/45 backdrop-blur-xs"
     >
       <div
-        className="bg-white border border-[#e6dfee] rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-xl flex flex-col overflow-hidden"
+        className="bg-white border border-[#e6dfee] rounded-2xl w-full max-w-[1000px] h-[88vh] md:h-[85vh] max-h-[88vh] md:max-h-[85vh] shadow-xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -384,31 +424,81 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Navigation Tabs */}
-        <div className="bg-[#f3eef8] border-b border-[#e6dfee] px-4 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-          {menuNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeSection === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveSection(item.id)}
-                className={`min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                  isActive
-                    ? 'bg-[#6d4c82] text-white font-semibold'
-                    : 'text-[#4f3461] hover:bg-white/70'
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Two-Column Body on ≥768px / List → Content Flow on <768px */}
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row bg-[#faf8fb] overflow-hidden">
+          {/* Left Column: Vertical Section List */}
+          <div
+            role="tablist"
+            aria-orientation="vertical"
+            aria-label="Seções de Informações e Privacidade"
+            className={`${
+              mobileView === 'list' ? 'flex' : 'hidden'
+            } md:flex flex-col w-full md:w-[272px] shrink-0 bg-[#faf8fb] md:border-r border-[#e6dfee] p-3.5 md:p-3 gap-2 md:gap-1.5 overflow-y-auto`}
+          >
+            {menuNavItems.map((item, idx) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  ref={(el) => {
+                    tabRefs.current[idx] = el;
+                  }}
+                  id={`menu-modal-tab-${item.id}`}
+                  role="tab"
+                  type="button"
+                  aria-selected={isActive}
+                  aria-controls={`menu-modal-panel-${item.id}`}
+                  onClick={() => selectSection(item.id)}
+                  onKeyDown={(e) => handleTabKeyDown(e, idx)}
+                  className={`w-full min-h-[48px] md:min-h-[42px] px-3.5 py-2.5 md:py-2 rounded-xl border text-left text-sm md:text-[13px] flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
+                    isActive
+                      ? 'bg-[#6d4c82] border-[#6d4c82] text-white font-semibold'
+                      : 'bg-white hover:bg-[#f3eef8] border-[#e6dfee] text-[#261d2e] font-medium'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <Icon
+                      className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#6d4c82]'}`}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  <ArrowRight
+                    className={`w-4 h-4 shrink-0 md:hidden ${
+                      isActive ? 'text-white/90' : 'text-[#7c6f88]'
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Modal Body Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-[#261d2e] space-y-6">
+          {/* Right Column: Selected Section Content Panel (own scroll) */}
+          <div
+            id={`menu-modal-panel-${activeSection}`}
+            role="tabpanel"
+            aria-labelledby={`menu-modal-tab-${activeSection}`}
+            className={`${
+              mobileView === 'content' ? 'flex' : 'hidden'
+            } md:flex flex-col flex-1 min-w-0 min-h-0 bg-white md:m-3 md:rounded-2xl md:border md:border-[#e6dfee] overflow-hidden`}
+          >
+            {/* Mobile Back-to-List Bar (<768px) */}
+            <div className="md:hidden px-4 py-2.5 bg-[#faf8fb] border-b border-[#efe9f4] shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileView('list')}
+                className="min-h-[40px] px-3 py-1.5 -ml-2 rounded-xl text-xs sm:text-sm font-semibold text-[#4f3461] hover:text-[#261d2e] hover:bg-[#f3eef8] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                ← Voltar
+              </button>
+            </div>
+
+            <div
+              ref={contentPanelRef}
+              className="p-5 sm:p-6 overflow-y-auto flex-1 text-[#261d2e] space-y-6"
+            >
 
           {/* SECTION 0: PRIVACIDADE E LIMITES */}
           {activeSection === 'privacy' && (
@@ -1491,6 +1581,8 @@ export const MenuModal: React.FC<MenuModalProps> = ({
             </div>
           )}
 
+            </div>
+          </div>
         </div>
 
         {/* Modal Footer */}
