@@ -44,11 +44,11 @@ export const FloatingHelpButton: React.FC<FloatingHelpButtonProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        aria-label="Preciso de ajuda — abrir acesso rápido de apoio e emergência"
-        className="fixed bottom-5 sm:bottom-6 right-3 sm:right-6 z-40 min-h-[44px] px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#b05c72] hover:bg-[#914358] text-white font-semibold text-xs sm:text-sm shadow-lg shadow-[#261d2e]/15 border border-white/90 inline-flex items-center gap-1.5 sm:gap-2 transition-colors cursor-pointer"
+        aria-label="Preciso de ajuda agora — abrir acesso rápido de apoio e emergência"
+        className="fixed bottom-5 sm:bottom-6 right-4 sm:right-6 z-40 min-h-[44px] px-4 py-2.5 rounded-2xl bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#261d2e]/12 border border-white/90 inline-flex items-center gap-2 transition-colors cursor-pointer"
       >
         <LifeBuoy className="w-4 h-4 shrink-0" aria-hidden="true" />
-        <span>Preciso de ajuda</span>
+        <span>Preciso de ajuda agora</span>
       </button>
 
       {isOpen && (
