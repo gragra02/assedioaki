@@ -295,6 +295,75 @@ export const INITIAL_REPORTS: Report[] = [
         actor: 'Sistema AssedioAki'
       }
     ]
+  },
+  {
+    id: 'ASK-2026-51204',
+    accessKey: '7310',
+    isAnonymous: true,
+    title: 'Ameaça de Vazamento de Conteúdo Íntimo e Cyberbullying',
+    category: 'violencia_virtual',
+    socialPlatform: 'instagram',
+    aggressorProfile: '@conta_fake_floripa_09 (Exemplo Ilustrativo)',
+    locationType: 'internet',
+    address: 'Ambiente Virtual • Instagram (Trindade / Florianópolis)',
+    city: 'Florianópolis',
+    state: 'SC',
+    lat: -27.5990,
+    lng: -48.5220,
+    dateTime: '2026-08-10T21:10',
+    periodOfDay: 'noite',
+    description: 'Perfil recém-criado enviou mensagens diretas com chantagem e ameaça de exposição pública de imagens privadas sem consentimento.',
+    riskLevel: 'grave',
+    status: 'enviada_autoridade',
+    forwardDestination: 'Delegacia de Repressão a Crimes Cibernéticos / DPCAMI Florianópolis',
+    createdAt: '2026-08-10T21:45:00Z',
+    updatedAt: '2026-08-11T09:00:00Z',
+    hasLocationOffset: true,
+    locationOffsetMeters: 340,
+    timeline: [
+      {
+        id: 'tl-12',
+        date: '2026-08-10T21:45:00Z',
+        title: 'Denúncia Virtual Registrada',
+        note: 'Plataforma Instagram e identificador do perfil suspeito anexados ao protocolo.',
+        actor: 'Sistema AssedioAki'
+      }
+    ]
+  },
+  {
+    id: 'ASK-2026-62918',
+    accessKey: '5092',
+    isAnonymous: true,
+    title: 'Perseguição Online Reiterada por Mensagens e Ligações',
+    category: 'perseguicao',
+    isOnlineStalking: true,
+    socialPlatform: 'whatsapp',
+    aggressorProfile: '+55 (47) 9****-4821 (Perfil Suspeito Exemplo)',
+    locationType: 'internet',
+    address: 'Ambiente Virtual • WhatsApp (Centro / Joinville)',
+    city: 'Joinville',
+    state: 'SC',
+    lat: -26.3045,
+    lng: -48.8487,
+    dateTime: '2026-08-12T22:40',
+    periodOfDay: 'noite',
+    description: 'Mesmo após bloqueio em diversas contas, o agressor utilizou novos números virtuais no WhatsApp para enviar ameaças e monitorar horários de saída.',
+    riskLevel: 'grave',
+    status: 'em_analise',
+    forwardDestination: 'DPCAMI / DEAM Joinville',
+    createdAt: '2026-08-12T23:05:00Z',
+    updatedAt: '2026-08-12T23:05:00Z',
+    hasLocationOffset: true,
+    locationOffsetMeters: 290,
+    timeline: [
+      {
+        id: 'tl-13',
+        date: '2026-08-12T23:05:00Z',
+        title: 'Alerta de Perseguição Online Registrado',
+        note: 'Perfil suspeito registrado para alerta preventivo na rede estadual.',
+        actor: 'Sistema AssedioAki'
+      }
+    ]
   }
 ];
 

@@ -15,9 +15,11 @@ import {
   NearestResult,
   clusterReportsByProximity,
   isDemoExampleReport,
-  PrivacyCluster
+  PrivacyCluster,
+  applyPrivacyRadiusOffset
 } from '../lib/geo';
 import { SC_CITY_COORDINATES_MAP, SC_CITIES_NAMES } from '../lib/scCities';
+import { LocationPrivacyModal } from './LocationPrivacyModal';
 
 type HeatCluster = PrivacyCluster;
 
@@ -25,6 +27,8 @@ const getTipoViolenciaPt = (category: string): string => {
   switch (category) {
     case 'importunacao_sexual':
       return 'Importunação sexual';
+    case 'estupro':
+      return 'Estupro';
     case 'assedio_sexual':
       return 'Assédio sexual';
     case 'assedio_moral':
@@ -94,6 +98,7 @@ interface HeatmapViewProps {
   mode?: 'heatmap' | 'locator';
   currentUser?: User | null;
   onAddComment?: (reportId: string, comment: ReportComment) => void;
+  focusedReportRequest?: { reportId: string; nonce: number } | null;
 }
 
 export const HeatmapView: React.FC<HeatmapViewProps> = ({
@@ -104,7 +109,8 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   onSelectReportForTrack,
   mode = 'heatmap',
   currentUser,
-  onAddComment
+  onAddComment,
+  focusedReportRequest
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -130,7 +136,10 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     lng: number;
     source: 'gps' | 'map' | 'city';
     cityName?: string;
+    hasOffset?: boolean;
+    offsetMeters?: number;
   } | null>(null);
+  const [pendingGpsTarget, setPendingGpsTarget] = useState<'both' | 'delegacia' | 'hospital' | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locateError, setLocateError] = useState<string | null>(null);
   const [isNearestPanelOpen, setIsNearestPanelOpen] = useState<boolean>(false);
@@ -148,41 +157,84 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   // Handle ESC key to exit fullscreen map
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMapFullscreen) {
+      const isEsc = e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape' || e.keyCode === 27;
+      if (isEsc && isMapFullscreen) {
         setIsMapFullscreen(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isMapFullscreen]);
 
-  // When map fullscreen toggles, lock body scroll and invalidate Leaflet map size
+  // When map fullscreen toggles, lock body scroll, mark dataset flag, and invalidate Leaflet map size
   useEffect(() => {
     if (isMapFullscreen) {
       document.body.style.overflow = 'hidden';
+      document.body.dataset.mapFullscreen = 'true';
     } else {
       document.body.style.overflow = '';
+      delete document.body.dataset.mapFullscreen;
     }
     const t1 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 50);
     const t2 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 250);
     const t3 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 500);
     return () => {
       document.body.style.overflow = '';
+      delete document.body.dataset.mapFullscreen;
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
   }, [isMapFullscreen]);
 
-  // List of all Delegacias da Mulher (DPCAMI / DEAM)
+  const formatSupportUnitLabel = (center: SupportCenter): string => {
+    if (center.type === 'delegacia') {
+      const suffixMatch = center.name.match(/\(([^)]+)\)\s*$/);
+      const suffix = suffixMatch ? ` (${suffixMatch[1]})` : '';
+      return `${center.city} - DPCAMI/DEAM${suffix}`;
+    }
+    if (center.type === 'hospital') {
+      const escapedCity = center.city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const cleanName = center.name
+        .replace(new RegExp(`\\s*\\(${escapedCity}\\)\\s*$`, 'i'), '')
+        .replace(new RegExp(`\\(${escapedCity}\\s*-\\s*`, 'i'), '(')
+        .replace(new RegExp(`\\s*-\\s*${escapedCity}\\)\\s*$`, 'i'), ')')
+        .trim();
+      return `${center.city} - ${cleanName}`;
+    }
+    return `${center.city} - ${center.name}`;
+  };
+
+  // List of all Delegacias da Mulher (DPCAMI / DEAM) sorted A-Z by city
   const delegacias = useMemo(() => {
-    return supportCenters.filter(c => c.type === 'delegacia');
+    return supportCenters
+      .filter(c => c.type === 'delegacia')
+      .sort((a, b) => {
+        const cityCmp = a.city.localeCompare(b.city, 'pt-BR', { sensitivity: 'base' });
+        if (cityCmp !== 0) return cityCmp;
+        return formatSupportUnitLabel(a).localeCompare(formatSupportUnitLabel(b), 'pt-BR', { sensitivity: 'base' });
+      });
   }, [supportCenters]);
 
-  // List of all Hospitais de Santa Catarina
+  // List of all Hospitais de Santa Catarina sorted A-Z by city
   const hospitais = useMemo(() => {
-    return supportCenters.filter(c => c.type === 'hospital');
+    return supportCenters
+      .filter(c => c.type === 'hospital')
+      .sort((a, b) => {
+        const cityCmp = a.city.localeCompare(b.city, 'pt-BR', { sensitivity: 'base' });
+        if (cityCmp !== 0) return cityCmp;
+        return formatSupportUnitLabel(a).localeCompare(formatSupportUnitLabel(b), 'pt-BR', { sensitivity: 'base' });
+      });
   }, [supportCenters]);
+
+  const closestUnitResult = useMemo<NearestResult | null>(() => {
+    if (!nearestResult) return null;
+    const { delegacia, hospital } = nearestResult;
+    if (delegacia && hospital) {
+      return delegacia.distanceKm <= hospital.distanceKm ? delegacia : hospital;
+    }
+    return delegacia || hospital || null;
+  }, [nearestResult]);
 
   // City default coordinates mapping (All 295 Santa Catarina municipalities)
   const cityCoordinates = SC_CITY_COORDINATES_MAP;
@@ -225,6 +277,35 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     }
   }, [reports, selectedReport]);
 
+  // Direct navigation when selecting a report from Meus relatos or Perfis denunciados
+  useEffect(() => {
+    if (!focusedReportRequest?.reportId) return;
+    const target = reports.find((r) => r.id === focusedReportRequest.reportId);
+    if (!target) return;
+
+    setDataScope('all');
+    setSelectedCity('all');
+    setCategoryFilter('all');
+    setPeriodFilter('all');
+    setRiskFilter('all');
+    setSelectedCenter(null);
+    setSelectedCluster(null);
+    setSelectedReport(target);
+
+    if (mapInstanceRef.current && !target.hideLocation) {
+      mapInstanceRef.current.setView([target.lat, target.lng], 15);
+    }
+
+    const timer = setTimeout(() => {
+      const el = document.getElementById('report-inspector-card');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [focusedReportRequest, reports]);
+
   // Handler para o botão "Ver detalhes" no popup do mapa
   useEffect(() => {
     (window as any).__abrirDetalhesOcorrencia = (reportId: string) => {
@@ -251,7 +332,9 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       if (centerTypeFilter === 'delegacia' && sc.type !== 'delegacia') return false;
       if (centerTypeFilter === 'hospital' && sc.type !== 'hospital') return false;
       if (centerTypeFilter === 'none') return false;
-      if (selectedDeamId !== 'all' && sc.id !== selectedDeamId) return false;
+      if (selectedDeamId !== 'all') {
+        return sc.id === selectedDeamId;
+      }
       if (selectedCity !== 'all' && sc.city !== selectedCity) return false;
       return true;
     });
@@ -326,7 +409,10 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     }
   };
 
-  const handleLocateGPS = (target: 'both' | 'delegacia' | 'hospital' = nearestTargetRef.current) => {
+  const executeLocateGPS = (
+    target: 'both' | 'delegacia' | 'hospital' = nearestTargetRef.current,
+    useOffset = true
+  ) => {
     setNearestTarget(target);
     nearestTargetRef.current = target;
     if (target === 'hospital') {
@@ -338,6 +424,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     } else {
       setCenterTypeFilter('all');
     }
+    setSelectedDeamId('all');
     setIsLocating(true);
     setLocateError(null);
     setIsNearestPanelOpen(true);
@@ -350,10 +437,27 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setUserLocation({ lat, lng, source: 'gps' });
-        calculateAndShowNearest(lat, lng, target);
+        const rawLat = position.coords.latitude;
+        const rawLng = position.coords.longitude;
+        if (useOffset) {
+          const displaced = applyPrivacyRadiusOffset(rawLat, rawLng, 200, 500);
+          setUserLocation({
+            lat: displaced.lat,
+            lng: displaced.lng,
+            source: 'gps',
+            hasOffset: true,
+            offsetMeters: displaced.offsetMeters
+          });
+          calculateAndShowNearest(displaced.lat, displaced.lng, target);
+        } else {
+          setUserLocation({
+            lat: rawLat,
+            lng: rawLng,
+            source: 'gps',
+            hasOffset: false
+          });
+          calculateAndShowNearest(rawLat, rawLng, target);
+        }
         setIsLocating(false);
       },
       (error) => {
@@ -371,6 +475,11 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
+  };
+
+  const handleLocateGPS = (target: 'both' | 'delegacia' | 'hospital' = nearestTargetRef.current) => {
+    setLocateError(null);
+    setPendingGpsTarget(target);
   };
 
   // Sync mode changes (auto-open and auto-GPS on 'locator' mode, close on 'heatmap' mode)
@@ -466,7 +575,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     }
   }, [selectedCity]);
 
-  // Handle specific Delegacia da Mulher selection dropdown
+  // Handle specific Support Unit (DPCAMI / DEAM / Hospital) selection dropdown
   const handleSelectDeam = (deamId: string) => {
     setSelectedDeamId(deamId);
     if (deamId === 'all') {
@@ -475,6 +584,9 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     }
     const deam = supportCenters.find(c => c.id === deamId);
     if (deam) {
+      if (centerTypeFilter === 'none' || (centerTypeFilter !== 'all' && centerTypeFilter !== deam.type)) {
+        setCenterTypeFilter('all');
+      }
       setSelectedCenter(deam);
       setSelectedReport(null);
       if (mapInstanceRef.current) {
@@ -490,8 +602,11 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     const layerGroup = layerGroupRef.current;
     layerGroup.clearLayers();
 
-    // Group filteredReports into privacy-safe spatial clusters
-    const clusters = clusterReportsByProximity(filteredReports, 0.008);
+    // Group filteredReports (excluding hidden-location reports) into privacy-safe spatial clusters
+    const clusters = clusterReportsByProximity(
+      filteredReports.filter((r) => !r.hideLocation),
+      0.008
+    );
 
     clusters.forEach((cluster) => {
       let color = '#6d4c82'; // ameixa suave (baixo)
@@ -1068,6 +1183,31 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               <span className="text-[#5a4e66] font-medium">Quando foi: </span>
               <strong className="text-[#261d2e] font-semibold">{formatarDataHoraPt(selectedReport.dateTime, selectedReport.periodOfDay)}</strong>
             </div>
+            {((selectedReport.socialPlatforms && selectedReport.socialPlatforms.length > 0) || selectedReport.socialPlatform) && (
+              <div>
+                <span className="text-[#5a4e66] font-medium">Rede social / aplicativo: </span>
+                <strong className="text-[#4f3461] font-semibold">
+                  {(selectedReport.socialPlatforms && selectedReport.socialPlatforms.length > 0
+                    ? selectedReport.socialPlatforms
+                    : selectedReport.socialPlatform
+                    ? [selectedReport.socialPlatform]
+                    : []
+                  )
+                    .map((plat) =>
+                      plat === 'outros'
+                        ? selectedReport.socialPlatformOther || 'Outros'
+                        : plat.charAt(0).toUpperCase() + plat.slice(1)
+                    )
+                    .join(', ')}
+                </strong>
+              </div>
+            )}
+            {selectedReport.aggressorProfile && (
+              <div>
+                <span className="text-[#5a4e66] font-medium">Perfil citado: </span>
+                <strong className="text-[#7f3347] font-mono font-semibold break-all">{selectedReport.aggressorProfile}</strong>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5 text-xs text-[#5a4e66]">
@@ -1075,6 +1215,19 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               <MapPin className="w-3.5 h-3.5 text-[#6d4c82] shrink-0" aria-hidden="true" />
               <span>{selectedReport.address}, {selectedReport.city} ({selectedReport.state})</span>
             </div>
+            {selectedReport.hideLocation ? (
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#7f3347] bg-[#fbf2f4] border border-[#e7cbd3] px-2.5 py-1 rounded-lg">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>Sem ponto no mapa por escolha de privacidade</span>
+              </div>
+            ) : selectedReport.hasLocationOffset ? (
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#26543b] bg-[#f1f6f3] border border-[#cde0d4] px-2.5 py-1 rounded-lg">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>
+                  Ponto aproximado para proteger quem contou{selectedReport.locationOffsetMeters ? ` (~${selectedReport.locationOffsetMeters} m)` : ''}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <div className="p-3.5 bg-[#faf8fb] rounded-xl border border-[#efe9f4] text-xs sm:text-sm text-[#493d54] leading-relaxed max-h-36 overflow-y-auto">
@@ -1212,7 +1365,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                       onClick={() => {
                         setSelectedReport(rep);
                         setSelectedCenter(null);
-                        if (mapInstanceRef.current) {
+                        if (mapInstanceRef.current && !rep.hideLocation) {
                           mapInstanceRef.current.setView([rep.lat, rep.lng], 15);
                         }
                       }}
@@ -1243,6 +1396,25 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
   return (
     <div className="space-y-5">
+      <LocationPrivacyModal
+        isOpen={pendingGpsTarget !== null}
+        context="locator"
+        onConfirmOffset={() => {
+          const target = pendingGpsTarget || nearestTargetRef.current;
+          setPendingGpsTarget(null);
+          executeLocateGPS(target, true);
+        }}
+        onConfirmExact={() => {
+          const target = pendingGpsTarget || nearestTargetRef.current;
+          setPendingGpsTarget(null);
+          executeLocateGPS(target, false);
+        }}
+        onCancel={() => {
+          setPendingGpsTarget(null);
+          setIsLocating(false);
+        }}
+      />
+
       {/* Map Header & Filter Controls Bar */}
       <div className="bg-white border border-[#e6dfee] rounded-2xl p-5 sm:p-6 space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1486,11 +1658,17 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             {userLocation && nearestResult && (
               <div className="bg-white rounded-xl border border-[#ddd1ea] p-4 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#efe9f4] pb-2.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#6d4c82]" />
                     <span className="text-xs font-semibold text-[#261d2e]">
                       {userLocation.cityName ? `Cidade escolhida: ${userLocation.cityName} (SC)` : userLocation.source === 'gps' ? 'Sua região atual' : 'Ponto marcado no mapa'}
                     </span>
+                    {userLocation.hasOffset && (
+                      <span className="text-[11px] font-medium bg-[#f1f6f3] text-[#26543b] border border-[#cde0d4] px-2 py-0.5 rounded-lg inline-flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3 shrink-0" aria-hidden="true" />
+                        <span>Ponto aproximado (~{userLocation.offsetMeters || 300} m)</span>
+                      </span>
+                    )}
                   </div>
 
                   {nearestTarget === 'both' ? (
@@ -1783,17 +1961,34 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                   className="w-full min-h-[38px] bg-white border border-[#ddd1ea] rounded-lg px-2.5 py-1 text-xs text-[#261d2e] font-medium focus:outline-none cursor-pointer"
                 >
                   <option value="all">Escolha uma delegacia da mulher ou um hospital</option>
+                  {userLocation && closestUnitResult && (
+                    <optgroup label="Mais perto de você">
+                      <option value={closestUnitResult.center.id}>
+                        Mais perto: {formatSupportUnitLabel(closestUnitResult.center)} ({formatDistance(closestUnitResult.distanceKm)})
+                      </option>
+                      {nearestResult?.delegacia && nearestResult.delegacia.center.id !== closestUnitResult.center.id && (
+                        <option value={nearestResult.delegacia.center.id}>
+                          Delegacia mais próxima: {formatSupportUnitLabel(nearestResult.delegacia.center)} ({formatDistance(nearestResult.delegacia.distanceKm)})
+                        </option>
+                      )}
+                      {nearestResult?.hospital && nearestResult.hospital.center.id !== closestUnitResult.center.id && (
+                        <option value={nearestResult.hospital.center.id}>
+                          Hospital mais próximo: {formatSupportUnitLabel(nearestResult.hospital.center)} ({formatDistance(nearestResult.hospital.distanceKm)})
+                        </option>
+                      )}
+                    </optgroup>
+                  )}
                   <optgroup label="DPCAMI / DEAM — Delegacias que atendem mulheres">
                     {delegacias.map(deam => (
                       <option key={deam.id} value={deam.id}>
-                        {deam.name} - {deam.city} ({deam.state})
+                        {formatSupportUnitLabel(deam)}
                       </option>
                     ))}
                   </optgroup>
                   <optgroup label="Hospitais 24h de Santa Catarina">
                     {hospitais.map(hosp => (
                       <option key={hosp.id} value={hosp.id}>
-                        {hosp.name} - {hosp.city} ({hosp.state})
+                        {formatSupportUnitLabel(hosp)}
                       </option>
                     ))}
                   </optgroup>
@@ -1907,6 +2102,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 >
                   <option value="all">Todos os tipos</option>
                   <option value="importunacao_sexual">Importunação sexual</option>
+                  <option value="estupro">Estupro</option>
                   <option value="assedio_sexual">Assédio sexual</option>
                   <option value="assedio_moral">Assédio moral</option>
                   <option value="perseguicao">Perseguição (stalking)</option>

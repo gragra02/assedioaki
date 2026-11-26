@@ -1,10 +1,19 @@
 export type HarassmentType = 
   | 'importunacao_sexual' 
+  | 'estupro'
   | 'assedio_sexual' 
   | 'assedio_moral'
   | 'perseguicao'
   | 'violencia_psicologica'
   | 'violencia_virtual';
+
+export type SocialPlatformType =
+  | 'whatsapp'
+  | 'facebook'
+  | 'instagram'
+  | 'telegram'
+  | 'discord'
+  | 'outros';
 
 export type LocationType = 
   | 'transporte_publico' 
@@ -88,6 +97,11 @@ export interface Report {
   locationMode?: ReportLocationMode;
   title: string;
   category: HarassmentType;
+  isOnlineStalking?: boolean;
+  socialPlatform?: SocialPlatformType;
+  socialPlatforms?: SocialPlatformType[];
+  socialPlatformOther?: string;
+  aggressorProfile?: string;
   locationType: LocationType;
   address: string;
   city: string;
@@ -109,6 +123,12 @@ export interface Report {
   timeline: TimelineEvent[];
   attachments?: ReportAttachment[];
   comments?: ReportComment[];
+  hasLocationOffset?: boolean;
+  locationOffsetMeters?: number;
+  hideLocation?: boolean;
+  registeredByCurrentUser?: boolean;
+  authorUserId?: string;
+  authorEmail?: string;
 }
 
 export interface SupportCenter {
@@ -144,6 +164,11 @@ export interface ReportDraft {
   isAnonymous: boolean;
   locationMode?: ReportLocationMode;
   category: HarassmentType;
+  isOnlineStalking?: boolean;
+  socialPlatform?: SocialPlatformType | '';
+  socialPlatforms?: SocialPlatformType[];
+  socialPlatformOther?: string;
+  aggressorProfile?: string;
   title: string;
   locationType: LocationType;
   address: string;
@@ -160,6 +185,8 @@ export interface ReportDraft {
   secretPin: string;
   attachmentName: string;
   reasonForPause?: 'aggressor_present' | 'quick_exit' | 'user_pause';
+  locationPrivacyMode?: 'offset' | 'exact' | 'none' | null;
+  locationOffsetMeters?: number;
 }
 
 export type CommunityCategory =

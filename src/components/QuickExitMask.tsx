@@ -204,7 +204,7 @@ export const QuickExitMask: React.FC<QuickExitMaskProps> = ({
 
           {hasReportDraft() && (
             <div className="inline-flex items-center justify-center gap-1.5 text-xs text-slate-700 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              <ShieldCheck className="w-4 h-4 text-slate-600" aria-hidden="true" />
+              <ShieldCheck className="w-4 h-4 text-slate-600 shrink-0" aria-hidden="true" />
               <span>Seu rascunho em andamento foi salvo localmente neste aparelho.</span>
             </div>
           )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Report } from '../types';
 import { decryptData } from '../lib/crypto';
 import { Search, Lock, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -30,6 +30,44 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
   const [newNote, setNewNote] = useState<string>('');
   const [isDecrypting, setIsDecrypting] = useState<boolean>(false);
   const [showSavedList, setShowSavedList] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!initialProtocolId) return;
+    const found = reports.find(
+      (r) => r.id.toLowerCase().trim() === initialProtocolId.toLowerCase().trim()
+    );
+    if (found) {
+      setSearchId(found.id);
+      setAccessPin(found.accessKey || '');
+      setActiveReport(found);
+      setErrorMsg(null);
+      setDecryptedText(null);
+      setParsedDecrypted(null);
+      if (found.encryptedPayload && found.accessKey) {
+        try {
+          const payloadObj = JSON.parse(found.encryptedPayload);
+          decryptData(payloadObj, found.accessKey)
+            .then((txt) => {
+              try {
+                const parsed = JSON.parse(txt) as ParsedDecryptedContent;
+                if (parsed && typeof parsed === 'object' && parsed.description) {
+                  setParsedDecrypted(parsed);
+                } else {
+                  setDecryptedText(txt);
+                }
+              } catch {
+                setDecryptedText(txt);
+              }
+            })
+            .catch(() => setDecryptedText(found.description));
+        } catch {
+          setDecryptedText(found.description);
+        }
+      } else {
+        setDecryptedText(found.description);
+      }
+    }
+  }, [initialProtocolId, reports]);
 
   const handleSearchAndDecrypt = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,12 +292,39 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
 
             <div className="text-sm text-[#493d54] space-y-2">
               <p>
-                <strong className="text-[#261d2e]">Local:</strong> {activeReport.address}, {activeReport.city} ({activeReport.state})
+                <strong className="text-[#261d2e]">Local:</strong>{' '}
+                {activeReport.hideLocation
+                  ? `${activeReport.address} (sem ponto no mapa)`
+                  : `${activeReport.address}, ${activeReport.city} (${activeReport.state})`}
               </p>
               <p>
                 <strong className="text-[#261d2e]">Modalidade:</strong>{' '}
                 {activeReport.isAnonymous ? 'Relato anônimo' : 'Identificado com sigilo'}
               </p>
+              {((activeReport.socialPlatforms && activeReport.socialPlatforms.length > 0) ||
+                activeReport.socialPlatform) && (
+                <p>
+                  <strong className="text-[#261d2e]">Rede social / aplicativo:</strong>{' '}
+                  {(activeReport.socialPlatforms && activeReport.socialPlatforms.length > 0
+                    ? activeReport.socialPlatforms
+                    : activeReport.socialPlatform
+                    ? [activeReport.socialPlatform]
+                    : []
+                  )
+                    .map((plat) =>
+                      plat === 'outros'
+                        ? activeReport.socialPlatformOther || 'Outros'
+                        : plat.charAt(0).toUpperCase() + plat.slice(1)
+                    )
+                    .join(', ')}
+                </p>
+              )}
+              {activeReport.aggressorProfile && (
+                <p>
+                  <strong className="text-[#261d2e]">Perfil citado:</strong>{' '}
+                  <span className="font-mono text-[#7f3347]">{activeReport.aggressorProfile}</span>
+                </p>
+              )}
 
               {parsedDecrypted ? (
                 <div className="pt-2 border-t border-[#e6dfee] space-y-2">

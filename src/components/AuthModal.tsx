@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { Lock, Mail, User as UserIcon, X, Check, KeyRound, AlertTriangle } from 'lucide-react';
 import {
@@ -58,11 +58,17 @@ function loadGoogleIdentityScript(): Promise<void> {
 
 interface AuthModalProps {
   isOpen: boolean;
+  requireIdentified?: boolean;
   onClose: () => void;
   onLoginSuccess: (user: User) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  requireIdentified = false,
+  onClose,
+  onLoginSuccess
+}) => {
   const [tab, setTab] = useState<'login' | 'register' | 'anonymous'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,6 +76,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
   const [declarationChecked, setDeclarationChecked] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setAuthError(null);
+      if (requireIdentified) {
+        setTab('login');
+      }
+    }
+  }, [isOpen, requireIdentified]);
 
   if (!isOpen) return null;
 
@@ -289,8 +304,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           </p>
         </div>
 
+        {requireIdentified && (
+          <div className="p-3.5 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl text-xs text-[#493d54] leading-relaxed">
+            Para salvar o relato com <strong className="text-[#261d2e]">seu perfil em sigilo</strong>, entre na sua conta ou crie um perfil abaixo. Logo em seguida, voltaremos direto para o seu relato.
+          </div>
+        )}
+
         {/* Tab Buttons */}
-        <div className="grid grid-cols-3 gap-1 bg-[#f3eef8] p-1 rounded-xl text-xs font-medium border border-[#e6dfee]">
+        <div className={`grid ${requireIdentified ? 'grid-cols-2' : 'grid-cols-3'} gap-1 bg-[#f3eef8] p-1 rounded-xl text-xs font-medium border border-[#e6dfee]`}>
           <button
             type="button"
             onClick={() => {
@@ -315,18 +336,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           >
             Criar perfil
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab('anonymous');
-              setAuthError(null);
-            }}
-            className={`min-h-[40px] rounded-lg transition-colors cursor-pointer ${
-              tab === 'anonymous' ? 'bg-white text-[#261d2e] font-semibold shadow-xs' : 'text-[#5a4e66] hover:text-[#261d2e]'
-            }`}
-          >
-            Anônimo
-          </button>
+          {!requireIdentified && (
+            <button
+              type="button"
+              onClick={() => {
+                setTab('anonymous');
+                setAuthError(null);
+              }}
+              className={`min-h-[40px] rounded-lg transition-colors cursor-pointer ${
+                tab === 'anonymous' ? 'bg-white text-[#261d2e] font-semibold shadow-xs' : 'text-[#5a4e66] hover:text-[#261d2e]'
+              }`}
+            >
+              Anônimo
+            </button>
+          )}
         </div>
 
         {tab !== 'anonymous' ? (

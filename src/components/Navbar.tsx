@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Home,
   Flame,
@@ -11,11 +11,19 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
-  User as UserIcon
+  User as UserIcon,
+  ChevronDown,
+  FileText,
+  ShieldAlert,
+  Info,
+  HelpCircle,
+  Mail,
+  Users
 } from 'lucide-react';
 import appLogo from '../assets/logo.jpg';
 import { AppSection } from './HomeView';
 import { User } from '../types';
+import { MenuModalSection } from './MenuModal';
 
 export type NavSection = AppSection | 'report';
 
@@ -27,6 +35,7 @@ interface NavbarProps {
   onOpenAuth?: () => void;
   onOpenAdminPanel?: () => void;
   onLogout?: () => void;
+  onOpenMenuSection?: (section: MenuModalSection) => void;
 }
 
 const DESKTOP_NAV_ITEMS: Array<{
@@ -55,6 +64,22 @@ const MOBILE_NAV_ITEMS: Array<{
   { id: 'rights', label: 'Direitos', icon: Scale }
 ];
 
+const MENU_SUBITEMS: Array<{
+  id: MenuModalSection;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: 'my_reports', label: 'Meus relatos', icon: FileText },
+  { id: 'suspect_profiles', label: 'Perfis denunciados', icon: ShieldAlert },
+  { id: 'identify', label: 'Identificar violência', icon: BookOpen },
+  { id: 'privacy', label: 'Privacidade e limites', icon: ShieldCheck },
+  { id: 'about', label: 'Sobre o projeto', icon: Info },
+  { id: 'faqs', label: 'Dúvidas frequentes', icon: HelpCircle },
+  { id: 'contact', label: 'Contato', icon: Mail },
+  { id: 'volunteer', label: 'Voluntariado', icon: Users },
+  { id: 'donate', label: 'Apoiar', icon: HeartHandshake }
+];
+
 export const Navbar: React.FC<NavbarProps> = ({
   activeSection,
   onSelectSection,
@@ -62,8 +87,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onOpenAuth,
   onOpenAdminPanel,
-  onLogout
+  onLogout,
+  onOpenMenuSection
 }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const normalizedActive: AppSection | null =
     activeSection === 'track'
       ? 'rights'
@@ -118,6 +156,49 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               );
             })}
+
+            {onOpenMenuSection && (
+              <div ref={menuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((prev) => !prev)}
+                  aria-expanded={menuOpen}
+                  className={`min-h-[44px] px-2 xl:px-3 py-2 rounded-xl text-[13px] xl:text-sm inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer ${
+                    menuOpen
+                      ? 'bg-[#f3eef8] text-[#261d2e] font-semibold'
+                      : 'text-[#4f3461] hover:bg-[#f3eef8] font-medium'
+                  }`}
+                >
+                  <span>Menu</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white border border-[#e6dfee] rounded-2xl shadow-xl p-1.5 z-50 space-y-0.5">
+                    {MENU_SUBITEMS.map((sub) => {
+                      const SubIcon = sub.icon;
+                      return (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            onOpenMenuSection(sub.id);
+                          }}
+                          className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs sm:text-sm text-[#493d54] hover:bg-[#f3eef8] hover:text-[#261d2e] font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <SubIcon className="w-4 h-4 text-[#6d4c82] shrink-0" aria-hidden="true" />
+                          <span>{sub.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Zone 3: Optional Login / Account + Always-Accessible Quick Exit */}

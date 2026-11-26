@@ -1,18 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShieldAlert, CheckCircle2, Lock, EyeOff, UserCheck } from 'lucide-react';
 import appLogo from '../assets/logo.jpg';
 
 interface SafeSpaceDeclarationModalProps {
   isOpen: boolean;
   onAccept: () => void;
+  onQuickExit?: () => void;
 }
 
-export const SafeSpaceDeclarationModal: React.FC<SafeSpaceDeclarationModalProps> = ({ isOpen, onAccept }) => {
+export const SafeSpaceDeclarationModal: React.FC<SafeSpaceDeclarationModalProps> = ({
+  isOpen,
+  onAccept,
+  onQuickExit
+}) => {
   const [agreed, setAgreed] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setAgreed(false);
+      const timer = setTimeout(() => {
+        modalRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -25,19 +35,37 @@ export const SafeSpaceDeclarationModal: React.FC<SafeSpaceDeclarationModalProps>
       aria-labelledby="safespace-modal-title"
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#261d2e]/55 backdrop-blur-sm overflow-y-auto"
     >
-      <div className="bg-white border border-[#e6dfee] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-xl space-y-5 relative my-auto">
-        {/* Header Icon & Title */}
-        <div className="flex items-center gap-3">
-          <img 
-            src={appLogo} 
-            alt="Logo Assédio Aki" 
-            className="w-12 h-12 rounded-full object-cover border border-[#e6dfee] shrink-0"
-            referrerPolicy="no-referrer"
-          />
-          <div>
-            <span className="text-xs font-semibold text-[#6d4c82]">Um lugar de cuidado</span>
-            <h2 id="safespace-modal-title" className="text-xl font-semibold text-[#261d2e] font-heading">Que bom ter você aqui</h2>
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className="bg-white border border-[#e6dfee] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-xl space-y-5 relative my-auto outline-none"
+      >
+        {/* Header Icon, Title & Direct Quick Exit */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img 
+              src={appLogo} 
+              alt="Logo Assédio Aki" 
+              className="w-12 h-12 rounded-full object-cover border border-[#e6dfee] shrink-0"
+              referrerPolicy="no-referrer"
+            />
+            <div>
+              <span className="text-xs font-semibold text-[#6d4c82]">Um lugar de cuidado</span>
+              <h2 id="safespace-modal-title" className="text-xl font-semibold text-[#261d2e] font-heading">Que bom ter você aqui</h2>
+            </div>
           </div>
+
+          {onQuickExit && (
+            <button
+              type="button"
+              onClick={onQuickExit}
+              title="Disfarçar esta tela imediatamente"
+              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#fbf2f4] hover:bg-[#f4e2e7] border border-[#e7cbd3] text-[#7f3347] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            >
+              <EyeOff className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Sair rápido</span>
+            </button>
+          )}
         </div>
 
         {/* Declaration Box */}

@@ -65,6 +65,7 @@ export default function App() {
 
   const [isMasked, setIsMasked] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [authReturnToReport, setAuthReturnToReport] = useState<boolean>(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState<boolean>(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState<boolean>(false);
   const [isSafeSpaceOpen, setIsSafeSpaceOpen] = useState<boolean>(() => {
@@ -128,11 +129,28 @@ export default function App() {
   }, [blockedAuthorIds]);
 
   const [selectedTrackId, setSelectedTrackId] = useState<string>('');
+  const [myReportIds, setMyReportIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('assedioaki_my_report_ids');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    return [];
+  });
+  const [focusedReportRequest, setFocusedReportRequest] = useState<{
+    reportId: string;
+    nonce: number;
+  } | null>(null);
   const [reportLocationPreload, setReportLocationPreload] = useState<{
     lat?: number;
     lng?: number;
     address?: string;
   }>({});
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
 
   // Optional Supabase OAuth session listener (e.g. Google/Gmail redirect)
   useEffect(() => {
@@ -204,6 +222,21 @@ export default function App() {
           .order('created_at', { ascending: false });
 
         if (!reportsError && reportsData && reportsData.length > 0) {
+          let localSavedMap = new Map<string, Partial<Report>>();
+          try {
+            const rawLocal = localStorage.getItem('assedioaki_reports');
+            if (rawLocal) {
+              const parsedLocal = JSON.parse(rawLocal);
+              if (Array.isArray(parsedLocal)) {
+                parsedLocal.forEach((item: Report) => {
+                  if (item?.id) localSavedMap.set(item.id, item);
+                });
+              }
+            }
+          } catch {
+            // ignore
+          }
+
           const mappedReports = reportsData.map((row) => {
             const rowComments: ReportComment[] = (commentsData || [])
               .filter((c) => c.report_id === row.id)
@@ -217,9 +250,27 @@ export default function App() {
                 ip: c.ip,
                 timeZone: c.time_zone
               }));
-            return mapDbRowToReport(row, rowComments);
+            const baseMapped = mapDbRowToReport(row, rowComments);
+            const localExtra = localSavedMap.get(row.id) || INITIAL_REPORTS.find((ir) => ir.id === row.id);
+            if (!localExtra) return baseMapped;
+            return {
+              ...baseMapped,
+              isOnlineStalking: localExtra.isOnlineStalking ?? baseMapped.isOnlineStalking,
+              socialPlatform: localExtra.socialPlatform ?? baseMapped.socialPlatform,
+              socialPlatforms: localExtra.socialPlatforms ?? baseMapped.socialPlatforms,
+              socialPlatformOther: localExtra.socialPlatformOther ?? baseMapped.socialPlatformOther,
+              aggressorProfile: localExtra.aggressorProfile ?? baseMapped.aggressorProfile,
+              hasLocationOffset: localExtra.hasLocationOffset ?? baseMapped.hasLocationOffset,
+              locationOffsetMeters: localExtra.locationOffsetMeters ?? baseMapped.locationOffsetMeters,
+              hideLocation: localExtra.hideLocation ?? baseMapped.hideLocation,
+              registeredByCurrentUser: localExtra.registeredByCurrentUser ?? baseMapped.registeredByCurrentUser,
+              authorUserId: localExtra.authorUserId ?? baseMapped.authorUserId,
+              authorEmail: localExtra.authorEmail ?? baseMapped.authorEmail
+            };
           });
-          setReports(mappedReports);
+          const mappedIds = new Set(mappedReports.map((r) => r.id));
+          const missingInitial = INITIAL_REPORTS.filter((ir) => !mappedIds.has(ir.id));
+          setReports([...mappedReports, ...missingInitial]);
         } else if (!reportsError && reportsData && reportsData.length === 0) {
           for (const initReport of INITIAL_REPORTS) {
             await supabase.from('reports').upsert(mapReportToDbRow(initReport));
@@ -251,6 +302,10 @@ export default function App() {
     localStorage.setItem('assedioaki_reports', JSON.stringify(reports));
   }, [reports]);
 
+  useEffect(() => {
+    localStorage.setItem('assedioaki_my_report_ids', JSON.stringify(myReportIds));
+  }, [myReportIds]);
+
   // Lock background scroll while mandatory Safe Space Declaration is open
   useEffect(() => {
     if (isSafeSpaceOpen) {
@@ -263,15 +318,17 @@ export default function App() {
     };
   }, [isSafeSpaceOpen]);
 
-  // ESC shortcut activates Quick Exit Mask
+  // ESC shortcut activates Quick Exit Mask in capture phase, respecting map fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsMasked((prev) => !prev);
-      }
+      const isEsc = e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape' || e.keyCode === 27;
+      if (!isEsc) return;
+      if (document.body.dataset.mapFullscreen === 'true') return;
+      e.preventDefault();
+      setIsMasked(true);
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
   const navigateTo = (section: NavSection) => {
@@ -281,8 +338,21 @@ export default function App() {
 
   const handleAddNewReport = async (newReport: Report) => {
     setReports((prev) => [newReport, ...prev]);
+    setMyReportIds((prev) => (prev.includes(newReport.id) ? prev : [newReport.id, ...prev]));
     if (supabase) {
       await supabase.from('reports').insert(mapReportToDbRow(newReport));
+    }
+  };
+
+  const handleUpdateReport = async (updatedReport: Report) => {
+    setReports((prev) => {
+      const updated = prev.map((r) => (r.id === updatedReport.id ? updatedReport : r));
+      localStorage.setItem('assedioaki_reports', JSON.stringify(updated));
+      return updated;
+    });
+    setMyReportIds((prev) => (prev.includes(updatedReport.id) ? prev : [updatedReport.id, ...prev]));
+    if (supabase) {
+      await supabase.from('reports').upsert(mapReportToDbRow(updatedReport));
     }
   };
 
@@ -320,6 +390,7 @@ export default function App() {
       localStorage.setItem('assedioaki_reports', JSON.stringify(updated));
       return updated;
     });
+    setMyReportIds((prev) => prev.filter((id) => id !== reportId));
     if (supabase) {
       await supabase.from('reports').delete().eq('id', reportId);
     }
@@ -418,6 +489,7 @@ export default function App() {
   };
 
   const handleNewReportAtLocation = (lat: number, lng: number, address: string) => {
+    setEditingReport(null);
     setReportLocationPreload({ lat, lng, address });
     navigateTo('report');
   };
@@ -484,16 +556,25 @@ export default function App() {
           }
           setIsSafeSpaceOpen(false);
         }}
+        onQuickExit={() => setIsMasked(true)}
       />
 
       {/* Optional Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        requireIdentified={authReturnToReport}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setAuthReturnToReport(false);
+        }}
         onLoginSuccess={(loggedUser) => {
           setUser(loggedUser);
           if (loggedUser.role === 'admin') {
             setIsAdminPanelOpen(true);
+          }
+          if (authReturnToReport) {
+            setAuthReturnToReport(false);
+            navigateTo('report');
           }
         }}
       />
@@ -502,20 +583,45 @@ export default function App() {
       <MenuModal
         isOpen={isMenuModalOpen}
         initialSection={menuModalSection}
+        reports={reports}
+        myReportIds={myReportIds}
+        currentUser={user}
         onClose={() => setIsMenuModalOpen(false)}
         onOpenReport={() => {
+          setEditingReport(null);
           setIsMenuModalOpen(false);
           navigateTo('report');
         }}
+        onSelectReport={(reportId) => {
+          setIsMenuModalOpen(false);
+          navigateTo('map');
+          setFocusedReportRequest({ reportId, nonce: Date.now() });
+        }}
+        onTrackReport={(reportId) => {
+          setIsMenuModalOpen(false);
+          handleSelectReportForTrack(reportId);
+        }}
+        onEditReport={(report) => {
+          setEditingReport(report);
+          setIsMenuModalOpen(false);
+          navigateTo('report');
+        }}
+        onDeleteReport={handleDeleteReport}
       />
 
       {/* Main Navigation */}
       <Navbar
         activeSection={activeSection}
-        onSelectSection={(sec) => navigateTo(sec)}
+        onSelectSection={(sec) => {
+          setEditingReport(null);
+          navigateTo(sec);
+        }}
         onQuickExit={() => setIsMasked(true)}
         user={user}
-        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAuth={() => {
+          setAuthReturnToReport(false);
+          setIsAuthOpen(true);
+        }}
         onOpenAdminPanel={() => setIsAdminPanelOpen(true)}
         onLogout={() => {
           setIsAdminPanelOpen(false);
@@ -524,6 +630,7 @@ export default function App() {
             supabase.auth.signOut().catch(() => {});
           }
         }}
+        onOpenMenuSection={(sec) => openInfoModal(sec)}
       />
 
       {/* Main Container Content */}
@@ -534,7 +641,10 @@ export default function App() {
             totalSupportCenters={SUPPORT_CENTERS.length}
             communityPostsCount={visibleCommunityPostsCount}
             onNavigate={(sec: AppSection) => navigateTo(sec)}
-            onOpenNewReport={() => navigateTo('report')}
+            onOpenNewReport={() => {
+              setEditingReport(null);
+              navigateTo('report');
+            }}
             onOpenPrivacy={() => openInfoModal('privacy')}
             onOpenSafeSpaceDeclaration={() => setIsSafeSpaceOpen(true)}
           />
@@ -556,8 +666,12 @@ export default function App() {
               currentUser={user}
               onAddComment={handleAddComment}
               onNewReportAtLocation={handleNewReportAtLocation}
-              onOpenNewReport={() => navigateTo('report')}
+              onOpenNewReport={() => {
+                setEditingReport(null);
+                navigateTo('report');
+              }}
               onSelectReportForTrack={handleSelectReportForTrack}
+              focusedReportRequest={focusedReportRequest}
             />
           </div>
         )}
@@ -586,7 +700,10 @@ export default function App() {
             onAddComment={handleAddComment}
             onNewReportAtLocation={handleNewReportAtLocation}
             onSelectReportForTrack={handleSelectReportForTrack}
-            onOpenReportForm={() => navigateTo('report')}
+            onOpenReportForm={() => {
+              setEditingReport(null);
+              navigateTo('report');
+            }}
             onBackHome={() => navigateTo('home')}
           />
         )}
@@ -615,7 +732,10 @@ export default function App() {
           <RightsView
             reports={reports}
             selectedTrackId={selectedTrackId}
-            onOpenReportForm={() => navigateTo('report')}
+            onOpenReportForm={() => {
+              setEditingReport(null);
+              navigateTo('report');
+            }}
             onAddTimelineNote={handleAddTimelineNote}
             onBackHome={() => navigateTo('home')}
           />
@@ -644,10 +764,26 @@ export default function App() {
             initialLat={reportLocationPreload.lat}
             initialLng={reportLocationPreload.lng}
             initialAddress={reportLocationPreload.address}
+            editingReport={editingReport}
             onSubmitSuccess={handleAddNewReport}
-            onCancel={() => navigateTo('home')}
+            onUpdateSuccess={handleUpdateReport}
+            onCancel={() => {
+              setEditingReport(null);
+              navigateTo('home');
+            }}
             onEmergencyExit={() => setIsMasked(true)}
-            onGoToTrack={(protocolId) => handleSelectReportForTrack(protocolId)}
+            onGoToTrack={(protocolId) => {
+              setEditingReport(null);
+              handleSelectReportForTrack(protocolId);
+            }}
+            onRequireAuth={() => {
+              setAuthReturnToReport(true);
+              setIsAuthOpen(true);
+            }}
+            onOpenMyReports={() => {
+              setEditingReport(null);
+              openInfoModal('my_reports');
+            }}
           />
         )}
       </main>
@@ -677,6 +813,20 @@ export default function App() {
           </p>
 
           <div className="pt-4 border-t border-[#efe9f4] flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+            <button
+              type="button"
+              onClick={() => openInfoModal('my_reports')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
+            >
+              Meus relatos
+            </button>
+            <button
+              type="button"
+              onClick={() => openInfoModal('suspect_profiles')}
+              className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
+            >
+              Perfis denunciados
+            </button>
             <button
               type="button"
               onClick={() => openInfoModal('privacy')}

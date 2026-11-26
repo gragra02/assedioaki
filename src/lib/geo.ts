@@ -246,10 +246,41 @@ export const INITIAL_DEMO_REPORT_IDS = new Set([
   'ASK-2026-11823',
   'ASK-2026-33829',
   'ASK-2026-15501',
-  'ASK-2026-78921'
+  'ASK-2026-78921',
+  'ASK-2026-51204',
+  'ASK-2026-62918'
 ]);
 
 export function isDemoExampleReport(report: Report): boolean {
   return INITIAL_DEMO_REPORT_IDS.has(report.id);
+}
+
+/**
+ * Applies a random safety-radius offset (default 200m to 500m) to coordinates
+ * to protect the victim's exact address while keeping regional heatmap accuracy.
+ */
+export function applyPrivacyRadiusOffset(
+  lat: number,
+  lng: number,
+  minRadiusMeters = 200,
+  maxRadiusMeters = 500
+): { lat: number; lng: number; offsetMeters: number } {
+  const radiusMeters = Math.round(
+    minRadiusMeters + Math.random() * Math.max(0, maxRadiusMeters - minRadiusMeters)
+  );
+  const theta = Math.random() * 2 * Math.PI;
+
+  const metersPerDegLat = 111320;
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  const safeCosLat = Math.abs(cosLat) > 0.0001 ? cosLat : 0.0001;
+
+  const deltaLat = (radiusMeters * Math.cos(theta)) / metersPerDegLat;
+  const deltaLng = (radiusMeters * Math.sin(theta)) / (metersPerDegLat * safeCosLat);
+
+  return {
+    lat: Number((lat + deltaLat).toFixed(6)),
+    lng: Number((lng + deltaLng).toFixed(6)),
+    offsetMeters: radiusMeters
+  };
 }
 

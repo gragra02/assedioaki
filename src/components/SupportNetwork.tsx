@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   FileText
 } from 'lucide-react';
-import { calculateDistanceKm, formatDistance } from '../lib/geo';
+import { calculateDistanceKm, formatDistance, applyPrivacyRadiusOffset } from '../lib/geo';
+import { LocationPrivacyModal } from './LocationPrivacyModal';
 
 interface SupportNetworkProps {
   supportCenters: SupportCenter[];
@@ -55,11 +56,17 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
   const [showLegalGuide, setShowLegalGuide] = useState<boolean>(false);
   const [showCrisisChecklist, setShowCrisisChecklist] = useState<boolean>(false);
 
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+    hasOffset?: boolean;
+    offsetMeters?: number;
+  } | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locateError, setLocateError] = useState<string | null>(null);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState<boolean>(false);
 
-  const handleGetLocation = () => {
+  const executeGetLocation = (useOffset: boolean) => {
     if (!navigator.geolocation) {
       setLocateError('Este navegador não consegue usar sua localização. Tudo bem: escolha sua cidade na lista abaixo.');
       return;
@@ -68,7 +75,21 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
     setLocateError(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        if (useOffset) {
+          const displaced = applyPrivacyRadiusOffset(pos.coords.latitude, pos.coords.longitude, 200, 500);
+          setUserLocation({
+            lat: displaced.lat,
+            lng: displaced.lng,
+            hasOffset: true,
+            offsetMeters: displaced.offsetMeters
+          });
+        } else {
+          setUserLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            hasOffset: false
+          });
+        }
         setIsLocating(false);
       },
       () => {
@@ -77,6 +98,11 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
+  };
+
+  const handleGetLocation = () => {
+    setLocateError(null);
+    setIsPrivacyModalOpen(true);
   };
 
   const availableCities = useMemo(() => {
@@ -233,10 +259,30 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
                 ) : (
                   <>
                     <Locate className="w-4 h-4" aria-hidden="true" />
-                    <span>{userLocation ? 'Ordenado por distância' : 'Ordenar por proximidade'}</span>
+                    <span>
+                      {userLocation
+                        ? userLocation.hasOffset
+                          ? `Ordenado (aprox. ~${userLocation.offsetMeters || 300} m)`
+                          : 'Ordenado por distância'
+                        : 'Ordenar por proximidade'}
+                    </span>
                   </>
                 )}
               </button>
+
+              <LocationPrivacyModal
+                isOpen={isPrivacyModalOpen}
+                context="support"
+                onConfirmOffset={() => {
+                  setIsPrivacyModalOpen(false);
+                  executeGetLocation(true);
+                }}
+                onConfirmExact={() => {
+                  setIsPrivacyModalOpen(false);
+                  executeGetLocation(false);
+                }}
+                onCancel={() => setIsPrivacyModalOpen(false)}
+              />
 
               {userLocation && (
                 <button
@@ -579,9 +625,12 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="p-4 bg-[#faf8fb] border border-[#efe9f4] rounded-xl space-y-2">
-              <span className="text-xs font-semibold text-[#6d4c82] block">Importunação sexual (Lei 13.718/18)</span>
+              <span className="text-xs font-semibold text-[#6d4c82] block">Importunação sexual e Estupro (Arts. 215-A e 213)</span>
               <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                Qualquer toque íntimo, beijo forçado ou ato sexual feito sem a sua permissão é crime.
+                <strong>Importunação sexual:</strong> qualquer toque íntimo, beijo forçado ou ato sexual feito sem a sua permissão.
+              </p>
+              <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
+                <strong>Estupro:</strong> ato sexual imposto com violência física, grave ameaça ou quando a pessoa não tinha condições de consentir.
               </p>
             </div>
             <div className="p-4 bg-[#faf8fb] border border-[#efe9f4] rounded-xl space-y-2">
