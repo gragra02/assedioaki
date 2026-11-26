@@ -45,7 +45,6 @@ const DESKTOP_NAV_ITEMS: Array<{
 }> = [
   { id: 'home', label: 'Início', icon: Home },
   { id: 'map', label: 'Mapa de Calor', icon: Flame },
-  { id: 'community', label: 'Comunidade', icon: HeartHandshake },
   { id: 'help', label: 'Ajuda', icon: LifeBuoy },
   { id: 'understand', label: 'Entender', icon: BookOpen },
   { id: 'talk', label: 'Conversar', icon: MessageCircleHeart },
@@ -59,7 +58,6 @@ const MOBILE_NAV_ITEMS: Array<{
 }> = [
   { id: 'home', label: 'Início', icon: Home },
   { id: 'map', label: 'Mapa', icon: Flame },
-  { id: 'community', label: 'Comunidade', icon: HeartHandshake },
   { id: 'talk', label: 'Conversar', icon: MessageCircleHeart },
   { id: 'rights', label: 'Direitos', icon: Scale }
 ];
@@ -131,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </button>
 
-          {/* Zone 2: Desktop Concise Primary Navigation (includes Mapa de Calor & Comunidade) */}
+          {/* Zone 2: Desktop Concise Primary Navigation */}
           <nav
             aria-label="Navegação principal"
             className="hidden lg:flex items-center gap-0.5 xl:gap-1 min-w-0"
@@ -282,12 +280,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* Mobile / Tablet Bottom Tab Bar (ergonomic thumb navigation including Mapa & Comunidade) */}
+      {/* Mobile / Tablet Bottom Tab Bar */}
       <nav
         aria-label="Navegação móvel"
         className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e6dfee] px-1"
       >
-        <div className="max-w-lg mx-auto grid grid-cols-5 h-14">
+        <div className="max-w-lg mx-auto grid grid-cols-4 h-14">
           {MOBILE_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = normalizedActive === item.id;

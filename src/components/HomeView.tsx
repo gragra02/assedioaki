@@ -8,8 +8,7 @@ import {
   PhoneCall,
   MessageSquare,
   ShieldCheck,
-  FileSearch,
-  HeartHandshake
+  FileSearch
 } from 'lucide-react';
 import { HOME_CARDS, PRIVACY_TRUTHS } from '../lib/guidanceContent';
 import { Report } from '../types';
@@ -18,7 +17,6 @@ import { HeatmapPreviewCard } from './HeatmapPreviewCard';
 export type AppSection =
   | 'home'
   | 'map'
-  | 'community'
   | 'help'
   | 'understand'
   | 'talk'
@@ -28,7 +26,6 @@ export type AppSection =
 interface HomeViewProps {
   reports: Report[];
   totalSupportCenters: number;
-  communityPostsCount: number;
   onNavigate: (section: AppSection) => void;
   onOpenNewReport: () => void;
   onOpenPrivacy: () => void;
@@ -45,7 +42,6 @@ const CARD_ICONS = {
 export const HomeView: React.FC<HomeViewProps> = ({
   reports,
   totalSupportCenters,
-  communityPostsCount,
   onNavigate,
   onOpenNewReport,
   onOpenPrivacy,
@@ -77,42 +73,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         onNewReport={onOpenNewReport}
       />
 
-      {/* 3. Community & Peer Support Highlight Card */}
-      <section aria-labelledby="home-community-heading" className="max-w-5xl mx-auto">
-        <div className="bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl p-6 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#4f3461]">
-              <HeartHandshake className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span>Espaço de escuta mútua e acolhimento</span>
-              {communityPostsCount > 0 && (
-                <span className="px-2 py-0.5 rounded-lg bg-white border border-[#ddd1ea] text-[#4f3461] tabular-nums">
-                  {communityPostsCount} {communityPostsCount === 1 ? 'publicação' : 'publicações'}
-                </span>
-              )}
-            </div>
-            <h2
-              id="home-community-heading"
-              className="text-xl sm:text-2xl font-semibold text-[#261d2e] font-heading tracking-tight"
-            >
-              COMUNIDADE — VOZES QUE SE APOIAM
-            </h2>
-            <p className="text-sm sm:text-[15px] text-[#493d54] leading-relaxed">
-              Compartilhe experiências sem revelar sua identidade, leia relatos de outras mulheres e envie mensagens de apoio com proteção contra exposição de dados pessoais.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('community')}
-            className="min-h-[48px] px-5 py-3 rounded-xl bg-white hover:bg-[#faf8fb] border border-[#cfc0df] text-[#4f3461] font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
-          >
-            <span>Acessar Comunidade</span>
-            <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
-          </button>
-        </div>
-      </section>
-
-      {/* 4. Preserved 4 Primary Intuitive Cards */}
+      {/* 3. Preserved 4 Primary Intuitive Cards */}
       <section aria-label="Principais caminhos de apoio" className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {HOME_CARDS.map((card, index) => {

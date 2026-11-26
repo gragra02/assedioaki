@@ -189,46 +189,4 @@ export interface ReportDraft {
   locationOffsetMeters?: number;
 }
 
-export type CommunityCategory =
-  | 'apoio_emocional'
-  | 'compartilhar_experiencia'
-  | 'alerta_regiao'
-  | 'duvida_direitos'
-  | 'superacao';
-
-export type CommunityFlagReason =
-  | 'dados_pessoais'
-  | 'conteudo_ofensivo'
-  | 'spam_propaganda'
-  | 'risco_seguranca';
-
-export interface CommunityReply {
-  id: string;
-  postId: string;
-  authorId: string;
-  authorLabel: string;
-  isAnonymous: boolean;
-  content: string;
-  createdAt: string;
-  flagCount?: number;
-  hiddenByModeration?: boolean;
-}
-
-export interface CommunityPost {
-  id: string;
-  authorId: string;
-  authorLabel: string;
-  isAnonymous: boolean;
-  category: CommunityCategory;
-  title: string;
-  content: string;
-  city?: string;
-  createdAt: string;
-  supportCount: number;
-  replies: CommunityReply[];
-  flagCount: number;
-  flagReasons: CommunityFlagReason[];
-  moderationStatus: 'published' | 'flagged' | 'hidden';
-}
-
 

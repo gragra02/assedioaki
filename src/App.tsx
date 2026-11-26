@@ -12,31 +12,15 @@ import { HelpNowView } from './components/HelpNowView';
 import { UnderstandView } from './components/UnderstandView';
 import { TalkSupportView } from './components/TalkSupportView';
 import { RightsView } from './components/RightsView';
-import { CommunityView } from './components/CommunityView';
 import { FloatingHelpButton } from './components/FloatingHelpButton';
 import { SafeSpaceDeclarationModal } from './components/SafeSpaceDeclarationModal';
 import { INITIAL_REPORTS, SUPPORT_CENTERS } from './lib/initialData';
 import {
   Report,
   User,
-  ReportComment,
-  CommunityPost,
-  CommunityCategory,
-  CommunityFlagReason
+  ReportComment
 } from './types';
 import { supabase, mapDbRowToReport, mapReportToDbRow } from './lib/supabase';
-import {
-  addReplyToCommunityPost,
-  createCommunityPost,
-  flagCommunityPost,
-  getOrCreateLocalAuthorId,
-  loadBlockedAuthors,
-  loadCommunityPosts,
-  moderateCommunityPost,
-  saveBlockedAuthors,
-  saveCommunityPosts,
-  toggleSupportOnCommunityPost
-} from './lib/community';
 import { addAccessLog } from './lib/accessLogs';
 import { saveRegisteredUser, isUserBlocked } from './lib/adminAuth';
 import appLogo from './assets/logo.jpg';
@@ -44,7 +28,6 @@ import appLogo from './assets/logo.jpg';
 const VALID_SECTIONS: NavSection[] = [
   'home',
   'map',
-  'community',
   'help',
   'understand',
   'talk',
@@ -110,23 +93,6 @@ export default function App() {
     }
     return INITIAL_REPORTS;
   });
-
-  // Community state (persisted cleanly in localStorage)
-  const [localAuthorId] = useState<string>(() => getOrCreateLocalAuthorId());
-  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>(() =>
-    loadCommunityPosts()
-  );
-  const [blockedAuthorIds, setBlockedAuthorIds] = useState<string[]>(() =>
-    loadBlockedAuthors()
-  );
-
-  useEffect(() => {
-    saveCommunityPosts(communityPosts);
-  }, [communityPosts]);
-
-  useEffect(() => {
-    saveBlockedAuthors(blockedAuthorIds);
-  }, [blockedAuthorIds]);
 
   const [selectedTrackId, setSelectedTrackId] = useState<string>('');
   const [myReportIds, setMyReportIds] = useState<string[]>(() => {
@@ -415,74 +381,6 @@ export default function App() {
     }
   };
 
-  // Community handlers
-  const handleCreateCommunityPost = (input: {
-    title: string;
-    content: string;
-    category: CommunityCategory;
-    city?: string;
-    isAnonymous: boolean;
-    authorDisplayName?: string;
-  }) => {
-    const newPost = createCommunityPost({
-      ...input,
-      authorId: localAuthorId
-    });
-    setCommunityPosts((prev) => [newPost, ...prev]);
-    addAccessLog(
-      `Publicação na Comunidade (${input.category})`,
-      newPost.authorLabel,
-      input.isAnonymous ? 'anonimo@assedioaki.com.br' : user?.email || 'comunidade@assedioaki.com.br',
-      input.isAnonymous ? 'anonymous' : 'user'
-    );
-  };
-
-  const handleReplyCommunityPost = (
-    postId: string,
-    input: { content: string; isAnonymous: boolean; authorDisplayName?: string }
-  ) => {
-    setCommunityPosts((prev) =>
-      addReplyToCommunityPost(prev, postId, {
-        ...input,
-        authorId: localAuthorId
-      })
-    );
-  };
-
-  const handleToggleCommunitySupport = (postId: string, delta: 1 | -1) => {
-    setCommunityPosts((prev) => toggleSupportOnCommunityPost(prev, postId, delta));
-  };
-
-  const handleFlagCommunityPost = (postId: string, reason: CommunityFlagReason) => {
-    setCommunityPosts((prev) => flagCommunityPost(prev, postId, reason));
-    addAccessLog(
-      `Denúncia de publicação na comunidade (${postId} · ${reason})`,
-      'Participante da Comunidade',
-      'anonimo@assedioaki.com.br',
-      'anonymous',
-      'aviso'
-    );
-  };
-
-  const handleModerateCommunityPost = (
-    postId: string,
-    action: 'approve' | 'hide' | 'delete'
-  ) => {
-    setCommunityPosts((prev) => moderateCommunityPost(prev, postId, action));
-    addAccessLog(
-      `Moderação na comunidade (${action}: ${postId})`,
-      user?.name || 'Administrador',
-      user?.email,
-      'admin'
-    );
-  };
-
-  const handleBlockAuthor = (authorId: string) => {
-    setBlockedAuthorIds((prev) =>
-      prev.includes(authorId) ? prev : [...prev, authorId]
-    );
-  };
-
   const handleSelectReportForTrack = (reportId: string) => {
     setSelectedTrackId(reportId);
     navigateTo('track');
@@ -531,10 +429,6 @@ export default function App() {
     setMenuModalSection(section);
     setIsMenuModalOpen(true);
   };
-
-  const visibleCommunityPostsCount = communityPosts.filter(
-    (p) => p.moderationStatus !== 'hidden' && !blockedAuthorIds.includes(p.authorId)
-  ).length;
 
   return (
     <div className="min-h-screen bg-[#faf8fb] text-[#261d2e] font-sans flex flex-col justify-between">
@@ -639,7 +533,6 @@ export default function App() {
           <HomeView
             reports={reports}
             totalSupportCenters={SUPPORT_CENTERS.length}
-            communityPostsCount={visibleCommunityPostsCount}
             onNavigate={(sec: AppSection) => navigateTo(sec)}
             onOpenNewReport={() => {
               setEditingReport(null);
@@ -674,22 +567,6 @@ export default function App() {
               focusedReportRequest={focusedReportRequest}
             />
           </div>
-        )}
-
-        {activeSection === 'community' && (
-          <CommunityView
-            posts={communityPosts}
-            blockedAuthorIds={blockedAuthorIds}
-            localAuthorId={localAuthorId}
-            currentUser={user}
-            onCreatePost={handleCreateCommunityPost}
-            onReplyPost={handleReplyCommunityPost}
-            onToggleSupport={handleToggleCommunitySupport}
-            onFlagPost={handleFlagCommunityPost}
-            onBlockAuthor={handleBlockAuthor}
-            onUnblockAllAuthors={() => setBlockedAuthorIds([])}
-            onBackHome={() => navigateTo('home')}
-          />
         )}
 
         {activeSection === 'help' && (
@@ -894,8 +771,6 @@ export default function App() {
         reports={reports}
         onDeleteReport={handleDeleteReport}
         onDeleteComment={handleDeleteComment}
-        communityPosts={communityPosts}
-        onModerateCommunityPost={handleModerateCommunityPost}
         currentUser={user}
       />
     </div>
