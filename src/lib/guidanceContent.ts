@@ -32,26 +32,26 @@ export const HOME_CARDS = [
   {
     id: 'help' as const,
     title: 'PRECISO DE AJUDA',
-    description: 'Orientações sobre como agir em uma situação de assédio e onde encontrar ajuda.',
-    actionLabel: 'Ver orientações e ajuda'
+    description: 'Caminhos seguros para o que está acontecendo agora ou já passou, e lugares perto de você.',
+    actionLabel: 'Ver caminhos de ajuda'
   },
   {
     id: 'understand' as const,
     title: 'QUERO ENTENDER O QUE ESTOU VIVENDO',
-    description: 'Informações sobre os diferentes tipos de assédio, com exemplos claros e linguagem acessível.',
-    actionLabel: 'Entender os tipos de assédio'
+    description: 'Explicações simples, com exemplos do dia a dia, para ajudar você a dar nome ao que viveu.',
+    actionLabel: 'Entender o que aconteceu'
   },
   {
     id: 'talk' as const,
     title: 'QUERO CONVERSAR',
-    description: 'Informações sobre serviços de acolhimento e canais de atendimento disponíveis.',
-    actionLabel: 'Ver canais de acolhimento'
+    description: 'Lugares de escuta gratuita e acolhedora em Santa Catarina, sem obrigação de denunciar.',
+    actionLabel: 'Ver lugares de escuta'
   },
   {
     id: 'rights' as const,
     title: 'CONHEÇA SEUS DIREITOS',
-    description: 'Informações sobre direitos das mulheres, proteção e possibilidades de denúncia.',
-    actionLabel: 'Ver direitos e denúncia'
+    description: 'Como funcionam as medidas de proteção, o atendimento gratuito e o acompanhamento do seu relato.',
+    actionLabel: 'Ver direitos e proteção'
   }
 ];
 
@@ -60,44 +60,44 @@ export const OFFICIAL_EMERGENCY_CHANNELS: OfficialEmergencyChannel[] = [
     id: 'pm-190',
     numberOrLabel: '190',
     title: 'Polícia Militar',
-    description: 'Para situações de perigo imediato, agressão acontecendo agora ou ameaça física.',
+    description: 'Para quando há perigo neste momento, agressão acontecendo agora ou ameaça próxima.',
     href: 'tel:190',
     availability: '24 horas · Ligação gratuita',
-    whenToUse: 'Emergência imediata'
+    whenToUse: 'Se houver perigo agora'
   },
   {
     id: 'central-180',
     numberOrLabel: '180',
     title: 'Central de Atendimento à Mulher',
-    description: 'Escuta especializada, orientação sobre direitos e encaminhamento para a rede de apoio.',
+    description: 'Escuta acolhedora, orientação sobre seus direitos e indicação de serviços gratuitos.',
     href: 'tel:180',
-    availability: '24 horas · Ligação gratuita e sigilosa',
-    whenToUse: 'Orientação e acolhimento'
+    availability: '24 horas · Gratuita e em sigilo',
+    whenToUse: 'Escuta e orientação'
   },
   {
     id: 'whatsapp-180',
     numberOrLabel: 'WhatsApp 180',
-    title: 'Atendimento por mensagem (180)',
-    description: 'Para quando não for seguro falar ao telefone. Canal oficial do Governo Federal.',
+    title: 'Conversa por mensagem (180)',
+    description: 'Para quando você não puder falar em voz alta ao telefone. Canal oficial e gratuito.',
     href: 'https://wa.me/556196100180?text=Ol%C3%A1%2C%20preciso%20de%20orienta%C3%A7%C3%A3o%20e%20apoio.',
     external: true,
-    availability: '24 horas · Mensagem de texto',
+    availability: '24 horas · Por texto',
     whenToUse: 'Quando precisar de silêncio'
   },
   {
     id: 'disque-181',
     numberOrLabel: '181',
-    title: 'Disque Denúncia (Santa Catarina)',
-    description: 'Canal oficial da Polícia Civil de Santa Catarina para denúncias anônimas.',
+    title: 'Disque 181 (Santa Catarina)',
+    description: 'Canal da Polícia Civil de Santa Catarina para avisar sobre situações sem se identificar.',
     href: 'tel:181',
     availability: '24 horas · Ligação gratuita',
-    whenToUse: 'Denúncia anônima em SC'
+    whenToUse: 'Sem se identificar em SC'
   },
   {
     id: 'pcsc-whatsapp',
     numberOrLabel: '(48) 98844-0083',
     title: 'WhatsApp Polícia Civil SC',
-    description: 'Canal direto da Polícia Civil de Santa Catarina para informações e encaminhamentos.',
+    description: 'Atendimento por mensagem da Polícia Civil em Santa Catarina para dúvidas e orientação.',
     href: 'https://wa.me/5548988440083?text=Ol%C3%A1%2C%20preciso%20de%20orienta%C3%A7%C3%A3o.',
     external: true,
     availability: 'Canal oficial PCSC',
@@ -110,102 +110,102 @@ export const HARASSMENT_GUIDE: HarassmentGuideItem[] = [
     id: 'importunacao_sexual',
     title: 'Importunação sexual',
     shortTitle: 'Importunação sexual',
-    summary: 'Qualquer ato de caráter sexual feito sem o seu consentimento, em público ou em espaço privado.',
-    legalBasis: 'Crime previsto no Art. 215-A do Código Penal.',
+    summary: 'Qualquer toque ou ato sexual feito sem a sua permissão, na rua, no transporte ou em lugar fechado.',
+    legalBasis: 'A lei protege você (Importunação sexual · Art. 215-A)',
     examples: [
       'Alguém encostar em você de propósito no ônibus, no terminal ou em eventos.',
-      'Beijo forçado, puxão de braço ou toques sem autorização.',
-      'Exposição ou atos obscenos direcionados a você na rua ou no transporte.'
+      'Beijo forçado, puxão pelo braço ou toques sem a sua permissão.',
+      'Atos sexuais ou exposição íntima feitos na sua direção sem você querer.'
     ],
     whatToDo: [
-      'Se puder, afaste-se e peça ajuda a pessoas próximas, motorista ou segurança.',
-      'Se estiver em segurança, anote horário, linha de ônibus, características ou placa.',
-      'Você pode ligar para o 190 se o agressor ainda estiver por perto.'
+      'Se puder, afaste-se e peça ajuda a quem estiver perto, como motorista, segurança ou outra mulher.',
+      'Quando estiver segura, anote o horário, a linha do ônibus ou algum ponto de referência.',
+      'Se a pessoa ainda estiver por perto oferecendo risco, você pode ligar para o 190.'
     ]
   },
   {
     id: 'assedio_sexual',
     title: 'Assédio sexual',
     shortTitle: 'Assédio sexual',
-    summary: 'Quando alguém usa uma posição de poder ou autoridade (chefe, professor, supervisor) para exigir ou pressionar por favores sexuais.',
-    legalBasis: 'Crime previsto no Art. 216-A do Código Penal.',
+    summary: 'Quando alguém usa um cargo ou posição acima de você (chefia, coordenação, professor) para pressionar ou fazer chantagem sexual.',
+    legalBasis: 'A lei protege você (Assédio sexual · Art. 216-A)',
     examples: [
-      'Insinuações ou convites sexuais ligados à manutenção do emprego, promoção ou nota.',
-      'Chantagem emocional ou profissional caso você recuse aproximações.',
-      'Mensagens insistentes de cunho sexual enviadas por um superior.'
+      'Convites ou insinuações sexuais ligados a manter o emprego, conseguir vaga ou nota.',
+      'Pressão ou ameaça de prejudicar você caso diga não.',
+      'Mensagens insistentes de cunho íntimo enviadas por alguém em posição de poder.'
     ],
     whatToDo: [
-      'Guarde mensagens, e-mails, áudios e anote datas e locais.',
-      'A culpa nunca é sua: a responsabilidade é de quem abusa da posição de poder.',
-      'Procure o canal de ouvidoria, sindicato, Ministério Público do Trabalho ou a Delegacia da Mulher.'
+      'Se for seguro, guarde prints de conversas, e-mails, áudios e anote datas.',
+      'A culpa nunca é sua: quem erra é quem abusa do cargo ou da autoridade.',
+      'Você pode buscar apoio no 180, na Defensoria Pública ou em uma DPCAMI / DEAM (delegacia que atende mulheres).'
     ]
   },
   {
     id: 'assedio_moral',
     title: 'Assédio moral',
     shortTitle: 'Assédio moral',
-    summary: 'Humilhações, críticas constantes, isolamento ou constrangimentos repetidos no trabalho ou nos estudos.',
-    legalBasis: 'Violação trabalhista e civil (CLT e Código Civil).',
+    summary: 'Humilhações, gritos, isolamento ou cobranças abusivas que se repetem no trabalho ou nos estudos.',
+    legalBasis: 'Seus direitos no trabalho e no estudo protegem você',
     examples: [
-      'Gritos, apelidos ofensivos ou piadas para diminuir você na frente de colegas.',
+      'Gritos, apelidos ofensivos ou piadas para diminuir você na frente de outras pessoas.',
       'Isolamento proposital, retirada de tarefas ou metas impossíveis de cumprir.',
-      'Ameaças constantes de demissão ou desqualificação do seu trabalho.'
+      'Ameaças constantes de demissão ou desvalorização diária do que você faz.'
     ],
     whatToDo: [
-      'Registre um diário com datas, horários, frases ditas e nomes de possíveis testemunhas.',
-      'Salve e-mails e mensagens recebidas fora do horário ou com tom ofensivo.',
-      'Busque orientação no sindicato, Ministério Público do Trabalho ou Defensoria Pública.'
+      'Anote datas, horários, o que foi dito e quem estava presente.',
+      'Guarde mensagens e e-mails que mostrem esse tratamento repetido.',
+      'Você pode pedir orientação gratuita na Defensoria Pública, sindicato ou Ministério Público do Trabalho.'
     ]
   },
   {
     id: 'perseguicao',
     title: 'Perseguição (Stalking)',
     shortTitle: 'Perseguição',
-    summary: 'Quando alguém vigia, segue ou entra em contato com você de forma repetida e indesejada, invadindo sua liberdade e causando medo.',
-    legalBasis: 'Crime previsto no Art. 147-A do Código Penal.',
+    summary: 'Quando alguém segue, vigia ou procura você sem parar, na rua ou pela internet, tirando sua paz e sua liberdade.',
+    legalBasis: 'A lei protege você (Perseguição · Art. 147-A)',
     examples: [
-      'Aparecer repetidamente na saída do trabalho, da faculdade ou perto de casa.',
-      'Ligar dezenas de vezes, criar perfis falsos ou mandar mensagens mesmo após bloqueio.',
-      'Enviar presentes ou recados com tom de controle ou intimidação.'
+      'Aparecer várias vezes na saída do trabalho, da aula ou perto da sua casa.',
+      'Ligar dezenas de vezes, criar perfis falsos ou mandar mensagens mesmo depois de bloqueio.',
+      'Mandar presentes ou recados indesejados para vigiar ou intimidar você.'
     ],
     whatToDo: [
-      'Não responda às provocações, mas não apague as mensagens — faça capturas de tela.',
-      'Avise pessoas de confiança sobre sua rotina e trajetos.',
-      'Você pode pedir Medida Protetiva de Urgência e registrar Boletim de Ocorrência.'
+      'Evite responder, mas não apague as provas: tire prints com data e horário.',
+      'Conte a pessoas de confiança sobre o que está acontecendo e combine caminhos seguros.',
+      'Você pode pedir medida protetiva e procurar uma DPCAMI / DEAM (delegacia que atende mulheres).'
     ]
   },
   {
     id: 'violencia_psicologica',
     title: 'Violência psicológica',
     shortTitle: 'Violência psicológica',
-    summary: 'Atitudes que causam dano emocional, diminuem sua autoestima, controlam suas escolhas ou fazem você duvidar de si mesma.',
-    legalBasis: 'Crime previsto no Art. 147-B do Código Penal e Lei Maria da Penha.',
+    summary: 'Atitudes que machucam emocionalmente, diminuem sua autoestima, controlam sua rotina ou fazem você duvidar de si mesma.',
+    legalBasis: 'A lei protege você (Violência emocional · Art. 147-B e Lei Maria da Penha)',
     examples: [
-      'Manipulação, chantagem, humilhação ou ameaças para controlar com quem você fala ou onde vai.',
-      'Fazer você sentir que está exagerando ou imaginando coisas que aconteceram.',
-      'Isolar você de amigas, familiares ou da sua rede de apoio.'
+      'Chantagem, humilhação ou ameaças para controlar sua roupa, seu dinheiro ou com quem você conversa.',
+      'Fazer você achar que está exagerando ou inventando algo que realmente aconteceu.',
+      'Afastar você de amigas, familiares e pessoas que te apoiam.'
     ],
     whatToDo: [
-      'Converse com alguém de confiança ou com o atendimento do 180 para não enfrentar isso sozinha.',
-      'Seus sentimentos são válidos — desconforto e medo são sinais importantes.',
-      'Você tem direito a acolhimento psicológico gratuito pelo SUS, CREAS ou NEAVIT.'
+      'Converse com alguém de confiança ou ligue para o 180 — você não precisa carregar isso sozinha.',
+      'O que você sente importa: medo, angústia e perda de liberdade são sinais reais.',
+      'Você tem direito a escuta psicológica gratuita pelo SUS, CREAS ou NEAVIT em SC.'
     ]
   },
   {
     id: 'violencia_virtual',
     title: 'Violência virtual e exposição íntima',
     shortTitle: 'Violência virtual',
-    summary: 'Ameaças pela internet, perseguição digital ou divulgação de fotos e vídeos íntimos sem o seu consentimento.',
-    legalBasis: 'Crime previsto no Art. 218-C do Código Penal e Marco Civil da Internet.',
+    summary: 'Ameaças na internet, perseguição online ou compartilhamento de fotos e vídeos íntimos sem a sua permissão.',
+    legalBasis: 'A lei protege você (Exposição íntima sem permissão · Art. 218-C)',
     examples: [
-      'Compartilhar ou ameaçar divulgar fotos ou vídeos íntimos sem autorização.',
-      'Exigir dinheiro ou favores para não vazar imagens (sextorsão).',
-      'Ataques coordenados, exposição de dados pessoais ou contas falsas com seu nome.'
+      'Mostrar, enviar ou ameaçar espalhar fotos ou vídeos íntimos sem sua autorização.',
+      'Pedir dinheiro ou encontros para não divulgar imagens suas.',
+      'Criar contas falsas com seu nome ou expor seus dados pessoais na internet.'
     ],
     whatToDo: [
-      'Salve prints mostrando a URL, o perfil, a data e a hora antes de bloquear a conta.',
-      'Não ceda a chantagens — procurar ajuda policial e jurídica interrompe o ciclo.',
-      'Registre Boletim de Ocorrência na Delegacia Virtual ou DPCAMI para solicitar remoção de conteúdo.'
+      'Antes de bloquear, salve prints mostrando o perfil, o endereço da página, a data e a hora.',
+      'Não se culpe e não ceda a chantagens: quem comete crime é quem expõe ou ameaça.',
+      'Você pode buscar ajuda pela Delegacia Virtual de SC ou em uma DPCAMI / DEAM para pedir a retirada do conteúdo.'
     ]
   }
 ];
@@ -213,57 +213,57 @@ export const HARASSMENT_GUIDE: HarassmentGuideItem[] = [
 export const RIGHTS_GUIDE: RightGuideItem[] = [
   {
     id: 'atendimento-humanizado',
-    title: 'Direito a atendimento acolhedor e sem julgamentos',
-    summary: 'Você tem direito a ser ouvida com respeito, privacidade e sem ser culpabilizada pelo que aconteceu.',
+    title: 'Ser ouvida com respeito e sem julgamentos',
+    summary: 'Em qualquer serviço público, você tem direito a privacidade, acolhimento e escuta cuidadosa — sem nunca ser culpada pelo que aconteceu.',
     details: [
-      'Em delegacias especializadas de Santa Catarina (DPCAMI), o atendimento busca oferecer Salas Lilás para sua privacidade.',
-      'Você pode solicitar atendimento por profissional mulher sempre que disponível.',
-      'Você não precisa estar sozinha: pode ir acompanhada de alguém de confiança.'
+      'Em Santa Catarina, as DPCAMIs / DEAMs (delegacias que atendem mulheres) contam com Salas Lilás para receber você com mais privacidade.',
+      'Sempre que houver profissional mulher disponível, você pode pedir para ser atendida por ela.',
+      'Se quiser, você pode ir acompanhada de alguém da sua confiança.'
     ]
   },
   {
     id: 'medida-protetiva',
-    title: 'Medidas Protetivas de Urgência',
-    summary: 'Se estiver sofrendo ameaça, perseguição ou violência doméstica/de gênero, a Justiça pode proibir o agressor de se aproximar ou fazer contato.',
+    title: 'Medidas protetivas para afastar quem te ameaça',
+    summary: 'Se você sofre ameaça, perseguição ou violência doméstica e de gênero, a Justiça pode proibir a pessoa de chegar perto ou entrar em contato.',
     details: [
-      'O pedido pode ser feito na delegacia (DPCAMI ou CPP 24h), pela Defensoria Pública (DefenDelas) ou pelo Balcão Virtual da CEAV/TJSC.',
-      'O juiz analisa o pedido com prioridade, geralmente em até 48 horas.',
-      'O descumprimento da medida protetiva é crime e permite acionar o 190 imediatamente.'
+      'Você pode pedir na delegacia (DPCAMI / DEAM ou plantão 24h), pela Defensoria Pública (DefenDelas) ou online no Balcão Virtual do TJSC.',
+      'Os pedidos são analisados com urgência pela Justiça, geralmente em até 48 horas.',
+      'Se a pessoa descumprir a medida, ligue 190 imediatamente.'
     ]
   },
   {
     id: 'boletim-ocorrencia',
-    title: 'Boletim de Ocorrência (presencial ou online)',
-    summary: 'Registrar o B.O. formaliza os fatos para investigação policial e proteção legal.',
+    title: 'Fazer o registro oficial pela internet ou pessoalmente',
+    summary: 'Quando você se sentir pronta, o Boletim de Ocorrência oficializa o que aconteceu para que a polícia possa investigar e proteger você.',
     details: [
-      'Em Santa Catarina, você pode registrar online na Delegacia Virtual (delegaciavirtual.sc.gov.br) ou presencialmente em qualquer delegacia.',
-      'Mesmo se não tiver todas as provas na hora, você pode registrar o relato.',
-      'Este aplicativo oferece um gerador de texto para ajudar você a organizar os fatos antes de preencher o B.O. oficial.'
+      'Em SC, você pode fazer pela internet na Delegacia Virtual (delegaciavirtual.sc.gov.br) ou ir até uma delegacia.',
+      'Você não precisa ter todas as provas em mãos para contar o que houve.',
+      'Aqui no app há um espaço que organiza seu relato em texto pronto, se você quiser copiar e colar lá.'
     ]
   },
   {
     id: 'saude-gratuita',
-    title: 'Atendimento médico e psicológico gratuito (SUS)',
-    summary: 'Em casos de violência sexual recente, hospitais de referência oferecem atendimento de urgência sigiloso sem exigir B.O. prévio.',
+    title: 'Cuidado médico e psicológico gratuito pelo SUS',
+    summary: 'Se houve violência sexual recente, os hospitais 24h atendem você com sigilo e gratuitamente, sem exigir passagem antes pela delegacia.',
     details: [
-      'Hospitais da rede SAVIS em Santa Catarina oferecem acolhimento, medicação preventiva (profilaxia PEP em até 72h) e apoio psicológico.',
-      'O atendimento de saúde é um direito seu e independe de registro policial imediato.'
+      'Hospitais de referência (rede SAVIS em SC) oferecem acolhimento, medicação preventiva (idealmente em até 72h) e apoio emocional.',
+      'Cuidar da sua saúde vem em primeiro lugar e é um direito seu.'
     ]
   }
 ];
 
 export const PRIVACY_TRUTHS = [
   {
-    title: 'Sem cadastro obrigatório',
-    text: 'Você pode ler todas as orientações, consultar direitos, localizar delegacias e acessar contatos oficiais sem informar nome, e-mail ou telefone.'
+    title: 'Você pode usar sem se identificar',
+    text: 'Você pode abrir o mapa, ler orientações, ver seus direitos e procurar ajuda em Santa Catarina sem informar nome, e-mail ou telefone.'
   },
   {
-    title: 'Saída rápida (botão no topo ou tecla ESC)',
-    text: 'O modo de disfarce oculta a tela imediatamente. Importante: ele não apaga o histórico do seu navegador nem impede monitoramento caso outra pessoa tenha acesso físico ao aparelho.'
+    title: 'Botão "Sair rápido" e tecla ESC',
+    text: 'Com um toque em "Sair rápido" (ou na tecla ESC), a tela muda na hora para uma página comum de previsão do tempo. Lembrete honesto: isso não apaga o histórico do navegador.'
   },
   {
-    title: 'Limites de armazenamento do relato',
-    text: 'Se você registrar um relato neste app, o texto é protegido por um PIN no navegador, mas o resumo, a cidade e a região aproximada ficam salvos localmente no dispositivo (ou no servidor configurado) para exibição no mapa público. Para denúncias com efeito policial, use sempre os canais oficiais (180, 181, 190 ou Delegacia Virtual SC).'
+    title: 'Como cuidamos do que você conta aqui',
+    text: 'Quando você salva um relato no app, os detalhes ficam trancados com o seu PIN, e no mapa aparece apenas um ponto aproximado para proteger você. Para investigação policial oficial, procure sempre o 180, 181, 190 ou a Delegacia Virtual de SC.'
   }
 ];
 

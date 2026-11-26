@@ -69,51 +69,51 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
   };
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+    <div className="bg-[#faf8fb] border border-[#e6dfee] rounded-xl p-4 space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+      <div className="flex items-center justify-between border-b border-[#efe9f4] pb-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-purple-600" />
-          <h4 className="text-xs font-bold text-slate-900">
-            Comentários e Apoio da Comunidade ({comments.length})
+          <MessageSquare className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
+          <h4 className="text-xs font-semibold text-[#261d2e]">
+            Palavras de apoio ({comments.length})
           </h4>
         </div>
-        <span className="text-[10px] text-purple-800 bg-purple-100 font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-          <Heart className="w-3 h-3 text-pink-600 fill-pink-500" />
-          Rede Segura
+        <span className="text-[11px] text-[#4f3461] bg-[#f3eef8] border border-[#ddd1ea] font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
+          <Heart className="w-3 h-3 text-[#b05c72]" aria-hidden="true" />
+          <span>Escuta segura</span>
         </span>
       </div>
 
       {/* Comments List */}
       <div className="space-y-2.5 max-h-52 overflow-y-auto pr-1">
         {comments.length === 0 ? (
-          <div className="py-4 text-center text-slate-500 text-xs bg-white rounded-lg border border-dashed border-slate-200 p-3">
-            <p className="font-semibold text-slate-700">Nenhum comentário registrado ainda.</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Deixe uma mensagem de acolhimento, alerta sobre o local ou informação de segurança.
+          <div className="py-4 text-center text-[#5a4e66] text-xs bg-white rounded-xl border border-dashed border-[#ddd1ea] p-3.5">
+            <p className="font-semibold text-[#261d2e]">Ainda não há mensagens aqui.</p>
+            <p className="text-xs text-[#5a4e66] mt-0.5">
+              Se quiser, deixe uma palavra de acolhimento ou um cuidado sobre este lugar.
             </p>
           </div>
         ) : (
           comments.map((cmt) => (
             <div
               key={cmt.id}
-              className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs space-y-1 text-xs"
+              className="bg-white p-3 rounded-xl border border-[#efe9f4] space-y-1 text-xs"
             >
               <div className="flex items-center justify-between text-[11px]">
-                <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                  <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-black shrink-0">
-                    {cmt.isAnonymous ? <Lock className="w-2.5 h-2.5 text-purple-600" /> : <UserIcon className="w-2.5 h-2.5 text-purple-600" />}
+                <div className="flex items-center gap-1.5 font-semibold text-[#261d2e]">
+                  <div className="w-5 h-5 rounded-full bg-[#f3eef8] text-[#6d4c82] flex items-center justify-center shrink-0">
+                    {cmt.isAnonymous ? <Lock className="w-2.5 h-2.5" aria-hidden="true" /> : <UserIcon className="w-2.5 h-2.5" aria-hidden="true" />}
                   </div>
                   <span>{cmt.authorName}</span>
                   {cmt.isAnonymous && (
-                    <span className="text-[9px] bg-slate-100 text-slate-600 px-1 rounded font-normal">
-                      Anônimo
+                    <span className="text-[10px] bg-[#faf8fb] text-[#5a4e66] border border-[#efe9f4] px-1.5 rounded font-normal">
+                      Sem se identificar
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-600">{formatDate(cmt.createdAt)}</span>
+                <span className="text-[11px] text-[#6b5e77] tabular-nums">{formatDate(cmt.createdAt)}</span>
               </div>
-              <p className="text-slate-700 leading-relaxed text-[11px] pl-6.5 whitespace-pre-wrap break-words">
+              <p className="text-[#493d54] leading-relaxed text-xs pl-6 whitespace-pre-wrap break-words">
                 {cmt.content}
               </p>
             </div>
@@ -122,22 +122,22 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
       </div>
 
       {/* Add Comment Form */}
-      <form onSubmit={handleSubmit} className="pt-2 border-t border-slate-200 space-y-2">
+      <form onSubmit={handleSubmit} className="pt-2 border-t border-[#efe9f4] space-y-2.5">
         {successMsg && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold p-2 rounded-lg flex items-center gap-1.5 animate-in fade-in">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>Comentário publicado com sucesso! Obrigado pelo apoio.</span>
+          <div className="bg-[#f1f6f3] border border-[#cde0d4] text-[#26543b] text-xs font-medium p-2.5 rounded-xl flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>Sua mensagem foi enviada. Obrigada pelo carinho e apoio.</span>
           </div>
         )}
 
-        <div className="space-y-1.5">
+        <div>
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Escreva uma palavra de apoio, alerta ou comentário sobre a ocorrência..."
+            placeholder="Escreva uma palavra de acolhimento ou cuidado sobre este local..."
             rows={2}
             maxLength={600}
-            className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder:text-slate-400"
+            className="w-full bg-white border border-[#e6dfee] rounded-xl p-2.5 text-xs sm:text-sm text-[#261d2e] placeholder:text-[#8c7e99]"
             required
           />
         </div>
@@ -151,7 +151,7 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
                 onChange={(e) => setIsAnonymous(e.target.checked)}
                 className="w-4 h-4 accent-[#6d4c82] rounded border-[#ddd1ea]"
               />
-              <span className="font-medium">Comentar de forma anônima</span>
+              <span className="font-medium">Enviar sem me identificar</span>
             </label>
 
             {!isAnonymous && (
@@ -159,7 +159,7 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
                 type="text"
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="Seu nome ou apelido"
+                placeholder="Apelido"
                 aria-label="Seu nome ou apelido"
                 className="bg-white border border-[#ddd1ea] rounded-lg px-2.5 py-1.5 text-xs text-[#261d2e] w-36 min-h-[38px]"
               />
@@ -177,10 +177,10 @@ export const ReportCommentsSection: React.FC<ReportCommentsSectionProps> = ({
         </div>
 
         {/* Honest visibility guidance */}
-        <div className="flex items-start gap-2 text-[11px] text-[#5a4e66] pt-2 border-t border-[#e6dfee]">
+        <div className="flex items-start gap-2 text-[11px] text-[#5a4e66] pt-2 border-t border-[#efe9f4]">
           <Globe className="w-3.5 h-3.5 text-[#6d4c82] shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            Comentários ficam visíveis para quem consulta este ponto no mapa. Evite informar nomes completos, documentos ou telefones pessoais.
+            As mensagens ficam visíveis para quem abre este ponto no mapa. Para sua proteção, não coloque nome completo, endereço ou telefone.
           </span>
         </div>
       </form>

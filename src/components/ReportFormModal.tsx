@@ -366,7 +366,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
       setSubmittedReport(newReport);
       onSubmitSuccess(newReport);
     } catch {
-      setSubmitError('Não foi possível salvar o relato agora. Revise os campos e tente novamente.');
+      setSubmitError('Não conseguimos enviar agora. Seus dados não foram perdidos. Tente de novo em instantes.');
     } finally {
       setIsEncrypting(false);
     }
@@ -382,10 +382,10 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
           </div>
           <div>
             <h1 className="text-xl font-semibold text-[#261d2e] font-heading">
-              Registrar relato neste aplicativo
+              Contar o que aconteceu
             </h1>
             <p className="text-xs sm:text-sm text-[#5a4e66]">
-              Rascunho salvo localmente enquanto você preenche · Não substitui B.O. policial
+              Você pode usar sem se identificar · Seu rascunho é salvo sozinho neste aparelho
             </p>
           </div>
         </div>
@@ -515,7 +515,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
             <div className="space-y-5">
               <div>
                 <span className="block text-xs font-semibold text-[#261d2e] mb-2">
-                  Como prefere registrar
+                  Como você prefere contar?
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
@@ -530,10 +530,10 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                   >
                     <div className="flex items-center gap-2 font-semibold text-sm text-[#261d2e]">
                       <EyeOff className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
-                      <span>Sem identificação (anônimo)</span>
+                      <span>Sem me identificar</span>
                     </div>
                     <p className="text-xs text-[#5a4e66] mt-1">
-                      Nenhum nome ou e-mail pessoal será ligado ao protocolo.
+                      Nenhum nome ou e-mail pessoal fica ligado ao seu relato.
                     </p>
                   </button>
 
@@ -549,7 +549,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                   >
                     <div className="flex items-center gap-2 font-semibold text-sm text-[#261d2e]">
                       <UserCheck className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
-                      <span>Associado ao meu perfil local</span>
+                      <span>Usar meu perfil deste aparelho</span>
                     </div>
                     <p className="text-xs text-[#5a4e66] mt-1">
                       Útil apenas se você entrou com um perfil opcional.
@@ -560,7 +560,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
 
               <div>
                 <span className="block text-xs font-semibold text-[#261d2e] mb-2">
-                  O que aconteceu (escolha a opção mais próxima)
+                  O que você viveu? (escolha a opção mais parecida)
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   {(
@@ -683,7 +683,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                       <span>OPÇÃO 1 — USAR MINHA LOCALIZAÇÃO ATUAL</span>
                     </div>
                     <p className="text-xs text-[#5a4e66] leading-snug">
-                      Pede sua autorização e arredonda a área (~600 m) para nunca exibir seu ponto exato.
+                      Pede sua autorização e mostra apenas uma área aproximada, para proteger você.
                     </p>
                   </button>
 
@@ -717,7 +717,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                         Localização aproximada com autorização
                       </p>
                       <p className="text-xs text-[#5a4e66]">
-                        Ao autorizar, aplicamos arredondamento espacial (~600 m) e não armazenamos coordenadas exatas do seu dispositivo.
+                        Ao autorizar, mostramos um ponto aproximado e não guardamos o endereço exato do seu aparelho.
                       </p>
                     </div>
                     <button
@@ -745,7 +745,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                   {gpsCoords && (
                     <div className="p-3.5 bg-white border border-[#cde0d4] rounded-xl space-y-2 text-xs text-[#26543b]">
                       <p className="font-semibold">
-                        Área aproximada preparada: {city} (grade protegida ~600 m)
+                        Área aproximada pronta: {city} (nunca o ponto exato)
                       </p>
                       <label className="flex items-start gap-2 cursor-pointer text-[#261d2e]">
                         <input
@@ -917,13 +917,13 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
             <div className="space-y-5">
               <div>
                 <label htmlFor="report-description" className="block text-xs font-semibold text-[#261d2e] mb-1">
-                  Descreva o que aconteceu (no seu ritmo)
+                  Conte o que aconteceu, no seu tempo
                 </label>
                 <textarea
                   id="report-description"
                   rows={4}
                   required
-                  placeholder="Conte apenas o que se sentir confortável em registrar..."
+                  placeholder="Escreva do seu jeito, apenas o que se sentir confortável em contar..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full p-3.5 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e] leading-relaxed"
@@ -932,12 +932,12 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
 
               <div>
                 <label htmlFor="report-aggressor" className="block text-xs font-semibold text-[#261d2e] mb-1">
-                  Características de quem praticou (opcional)
+                  Sobre quem fez isso (opcional)
                 </label>
                 <input
                   id="report-aggressor"
                   type="text"
-                  placeholder="Ex: roupas, placa, função no local ou vínculo"
+                  placeholder="Ex: roupas, linha de ônibus, função no local ou se era alguém conhecido"
                   value={aggressorDetails}
                   onChange={(e) => setAggressorDetails(e.target.value)}
                   className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
@@ -946,12 +946,12 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
 
               <div>
                 <label htmlFor="report-witnesses" className="block text-xs font-semibold text-[#261d2e] mb-1">
-                  Testemunhas ou câmeras próximas (opcional)
+                  Alguém viu ou havia câmeras por perto? (opcional)
                 </label>
                 <input
                   id="report-witnesses"
                   type="text"
-                  placeholder="Ex: motorista, colegas, câmeras da rua"
+                  placeholder="Ex: motorista, colegas, câmeras próximas"
                   value={witnesses}
                   onChange={(e) => setWitnesses(e.target.value)}
                   className="w-full min-h-[44px] px-3.5 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
@@ -960,7 +960,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
 
               <div>
                 <span className="block text-xs font-semibold text-[#261d2e] mb-2">
-                  Nível de gravidade percebido
+                  Como você se sentiu em relação à sua segurança?
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {(
@@ -1048,16 +1048,16 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                       ? `Fictícia/aproximada (${sanitizedPreview.address}, ${sanitizedPreview.city})`
                       : `Área aproximada (${sanitizedPreview.address}, ${sanitizedPreview.city})`}
                   </strong>
-                  . Coordenadas exatas não são publicadas nem guardadas.
+                  . O endereço exato não é publicado nem guardado.
                 </p>
                 <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                  O texto completo do relato, características do autor e testemunhas são criptografados com seu PIN.
+                  O texto completo do seu relato e os detalhes informados ficam protegidos com o seu PIN. Ninguém vai saber que foi você.
                 </p>
               </div>
 
               <div>
                 <label htmlFor="report-pin-input" className="block text-xs font-semibold text-[#261d2e] mb-1">
-                  Escolha um PIN de 4 a 6 dígitos para acessar este relato depois
+                  Escolha um PIN de 4 a 6 números para abrir este relato depois
                 </label>
                 <input
                   id="report-pin-input"
@@ -1071,8 +1071,8 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
               </div>
 
               <div className="p-3.5 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-xs text-[#5a4e66] leading-relaxed">
-                <strong className="text-[#261d2e] block mb-0.5">Aviso importante</strong>
-                Este registro ajuda você a guardar informações e contribui para o mapa preventivo do aplicativo, mas não envia denúncia automática à Polícia Civil nem substitui o Boletim de Ocorrência oficial (180, 181, 190 ou Delegacia Virtual).
+                <strong className="text-[#261d2e] block mb-0.5">Bom saber</strong>
+                Este relato ajuda você a guardar informações e fortalece o mapa de segurança, mas não vai automaticamente para a polícia. Se quiser denunciar oficialmente, você pode ligar 180, 181, 190 ou usar a Delegacia Virtual.
               </div>
 
               <div className="flex justify-between pt-2">
@@ -1136,7 +1136,7 @@ export const ReportFormModal: React.FC<ReportFormModalProps> = ({
                 className="min-h-[44px] px-5 py-2.5 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl inline-flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <FileSearch className="w-4 h-4" aria-hidden="true" />
-                <span>Acompanhar protocolo</span>
+                <span>Acompanhar meu relato</span>
               </button>
             )}
 

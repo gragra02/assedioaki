@@ -156,16 +156,16 @@ TESTEMUNHAS: ${activeReport.witnesses || 'Não informado'}
         <div className="lg:col-span-2 bg-white border border-[#e6dfee] rounded-2xl p-5 sm:p-6 space-y-4">
           <div className="border-b border-[#efe9f4] pb-3 space-y-1">
             <h3 className="text-base font-semibold text-[#261d2e] font-heading">
-              Organizador de texto para Boletim de Ocorrência
+              Texto organizado para levar à Delegacia Virtual
             </h3>
             <p className="text-sm text-[#5a4e66]">
-              Se você já salvou um relato neste aparelho, selecione-o abaixo para gerar um rascunho organizado e colar no site da Delegacia Virtual.
+              Se você já salvou um relato aqui no app, escolha abaixo para montar um texto claro e colar no site da Delegacia Virtual.
             </p>
           </div>
 
           <div>
             <label htmlFor="bo-report-select" className="block text-xs font-semibold text-[#261d2e] mb-1">
-              Escolha um protocolo salvo
+              Qual relato você quer usar?
             </label>
             <select
               id="bo-report-select"
@@ -173,7 +173,7 @@ TESTEMUNHAS: ${activeReport.witnesses || 'Não informado'}
               onChange={(e) => setSelectedReportId(e.target.value)}
               className="w-full min-h-[44px] px-3 py-2 bg-[#faf8fb] border border-[#e6dfee] rounded-xl text-sm text-[#261d2e]"
             >
-              <option value="">-- Selecione um protocolo --</option>
+              <option value="">Escolha um relato salvo...</option>
               {reports.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.id} - {r.title} ({r.city})

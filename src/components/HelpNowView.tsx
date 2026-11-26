@@ -62,43 +62,43 @@ export const HelpNowView: React.FC<HelpNowViewProps> = ({
       {/* Informative Guidance: Now vs. After */}
       <section aria-label="Orientações práticas" className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-[#fbf2f4] border border-[#ead4dc] rounded-2xl p-6 space-y-3">
-          <p className="text-xs font-semibold text-[#8c3d52]">Orientação informativa</p>
+          <p className="text-xs font-semibold text-[#8c3d52]">Para este momento</p>
           <h2 className="text-lg font-semibold text-[#261d2e] font-heading">
-            Se a situação está acontecendo agora
+            Se está acontecendo agora
           </h2>
           <ul className="space-y-2.5 text-sm text-[#4a3b47] leading-relaxed list-disc pl-5">
-            <li>Priorize a sua segurança física: afaste-se da pessoa e vá para um lugar iluminado ou movimentado.</li>
-            <li>Peça ajuda a quem estiver próximo — motorista, cobrador, segurança, atendente ou outra mulher.</li>
-            <li>Se estiver em risco imediato, ligue para a Polícia Militar (<strong className="tabular-nums">190</strong>).</li>
-            <li>Se não puder falar ao telefone, envie mensagem para o WhatsApp oficial <strong className="tabular-nums">180</strong>.</li>
+            <li>Cuide primeiro de você: afaste-se e procure um lugar iluminado ou com mais pessoas por perto.</li>
+            <li>Peça ajuda a quem estiver próximo — motorista, segurança, atendente ou outra mulher.</li>
+            <li>Se houver perigo imediato, ligue para a Polícia Militar (<strong className="tabular-nums">190</strong>).</li>
+            <li>Se não puder falar em voz alta, mande mensagem para o WhatsApp <strong className="tabular-nums">180</strong>.</li>
           </ul>
         </div>
 
         <div className="bg-white border border-[#e6dfee] rounded-2xl p-6 space-y-3">
-          <p className="text-xs font-semibold text-[#6d4c82]">Orientação informativa</p>
+          <p className="text-xs font-semibold text-[#6d4c82]">No seu tempo</p>
           <h2 className="text-lg font-semibold text-[#261d2e] font-heading">
-            Se o assédio já aconteceu
+            Se já aconteceu
           </h2>
           <ul className="space-y-2.5 text-sm text-[#5a4e66] leading-relaxed list-disc pl-5">
-            <li>A responsabilidade pelo assédio é sempre de quem o praticou — nunca sua.</li>
-            <li>Se sentir segurança, salve capturas de tela, mensagens, datas, horários e nomes de testemunhas.</li>
-            <li>Em caso de violência sexual recente (até 72h), procure um hospital de referência para acolhimento médico sigiloso, mesmo sem Boletim de Ocorrência.</li>
-            <li>Você decide se e quando quer fazer um registro policial ou conversar com um serviço de apoio.</li>
+            <li>Nada do que aconteceu é culpa sua — a responsabilidade é sempre de quem agrediu ou assediou.</li>
+            <li>Se for seguro, guarde prints, mensagens, horários e quem estava por perto.</li>
+            <li>Se houve violência sexual recente (até 72h), você pode ir direto a um hospital 24h para receber cuidado gratuito e em sigilo, sem precisar passar antes na delegacia.</li>
+            <li>Você escolhe, sem pressa, se e quando quer conversar com um serviço de apoio ou procurar a polícia.</li>
           </ul>
         </div>
       </section>
 
-      {/* Official Emergency Services (Explicitly distinguished from app guidance) */}
+      {/* Official Emergency Services */}
       <section aria-label="Serviços oficiais de atendimento" className="bg-white border border-[#e6dfee] rounded-2xl p-6 space-y-4">
         <div className="space-y-1">
           <p className="text-xs font-semibold text-[#6d4c82]">
-            Serviços oficiais de atendimento (externos ao aplicativo)
+            Atendimento público e gratuito · 24h
           </p>
           <h2 className="text-xl font-semibold text-[#261d2e] font-heading">
-            Canais públicos de emergência e acolhimento
+            Com quem você pode falar agora
           </h2>
           <p className="text-sm text-[#5a4e66]">
-            Os contatos abaixo ligam ou abrem conversa diretamente com órgãos públicos oficiais.
+            Toque em uma opção abaixo para ligar ou conversar por mensagem com canais oficiais.
           </p>
         </div>
 
@@ -145,10 +145,10 @@ export const HelpNowView: React.FC<HelpNowViewProps> = ({
           </div>
           <div className="space-y-1">
             <span className="text-base font-semibold text-[#261d2e] block">
-              {showLocatorMap ? 'Ocultar localizador de unidades' : 'Encontrar delegacia ou hospital próximo'}
+              {showLocatorMap ? 'Fechar mapa de lugares próximos' : 'Encontrar delegacia da mulher ou hospital perto de mim'}
             </span>
             <span className="text-sm text-[#5a4e66] block">
-              Veja no mapa a Delegacia da Mulher (DPCAMI) ou Hospital 24h mais perto de você em Santa Catarina.
+              Veja no mapa a DPCAMI / DEAM (delegacias que atendem mulheres) ou o hospital 24h mais próximo em SC.
             </span>
           </div>
         </button>
@@ -163,10 +163,10 @@ export const HelpNowView: React.FC<HelpNowViewProps> = ({
           </div>
           <div className="space-y-1">
             <span className="text-base font-semibold text-[#261d2e] block">
-              Registrar relato neste aplicativo
+              Contar o que aconteceu aqui no app
             </span>
             <span className="text-sm text-[#5a4e66] block">
-              Guarde informações com proteção por PIN e ajude a mapear áreas de risco (não substitui B.O. policial).
+              Você pode usar sem se identificar, guardar tudo com senha (PIN) e ajudar outras mulheres pelo mapa.
             </span>
           </div>
         </button>

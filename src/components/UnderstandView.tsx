@@ -61,7 +61,7 @@ export const UnderstandView: React.FC<UnderstandViewProps> = ({
       {/* Gentle Filter Search */}
       <div className="max-w-md">
         <label htmlFor="understand-search" className="block text-sm font-medium text-[#261d2e] mb-1.5">
-          Buscar por situação ou palavra-chave
+          Buscar pelo que aconteceu
         </label>
         <div className="relative">
           <Search className="w-4 h-4 text-[#7c6f88] absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />

@@ -7,10 +7,15 @@ import {
   BookOpen,
   MessageCircleHeart,
   Scale,
-  EyeOff
+  EyeOff,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  User as UserIcon
 } from 'lucide-react';
 import appLogo from '../assets/logo.jpg';
 import { AppSection } from './HomeView';
+import { User } from '../types';
 
 export type NavSection = AppSection | 'report';
 
@@ -18,6 +23,10 @@ interface NavbarProps {
   activeSection: NavSection;
   onSelectSection: (section: NavSection) => void;
   onQuickExit: () => void;
+  user?: User | null;
+  onOpenAuth?: () => void;
+  onOpenAdminPanel?: () => void;
+  onLogout?: () => void;
 }
 
 const DESKTOP_NAV_ITEMS: Array<{
@@ -49,7 +58,11 @@ const MOBILE_NAV_ITEMS: Array<{
 export const Navbar: React.FC<NavbarProps> = ({
   activeSection,
   onSelectSection,
-  onQuickExit
+  onQuickExit,
+  user,
+  onOpenAuth,
+  onOpenAdminPanel,
+  onLogout
 }) => {
   const normalizedActive: AppSection | null =
     activeSection === 'track'
@@ -107,20 +120,84 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Zone 3: Discreet, Always-Accessible Quick Exit */}
-          <button
-            type="button"
-            onClick={onQuickExit}
-            title="Disfarçar esta tela imediatamente (tecla ESC)"
-            aria-label="Sair rápido e disfarçar tela (ESC)"
-            className="min-h-[44px] px-2.5 xl:px-3.5 py-2 rounded-xl bg-[#fbf2f4] hover:bg-[#f4e2e7] border border-[#e7cbd3] text-[#7f3347] text-xs xl:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer shrink-0"
-          >
-            <EyeOff className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>Sair rápido</span>
-            <span className="hidden xl:inline text-[11px] font-medium text-[#914358] opacity-80">
-              ESC
-            </span>
-          </button>
+          {/* Zone 3: Optional Login / Account + Always-Accessible Quick Exit */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {!user ? (
+              onOpenAuth && (
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  aria-label="Entrar na conta"
+                  className="min-h-[44px] px-2.5 xl:px-3.5 py-2 rounded-xl bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] text-[#4f3461] text-xs xl:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>Entrar</span>
+                </button>
+              )
+            ) : user.role === 'admin' ? (
+              <div className="flex items-center gap-1">
+                {onOpenAdminPanel && (
+                  <button
+                    type="button"
+                    onClick={onOpenAdminPanel}
+                    aria-label="Abrir painel administrativo"
+                    className="min-h-[44px] px-2.5 xl:px-3 py-2 rounded-xl bg-[#f3eef8] hover:bg-[#e8def2] border border-[#ddd1ea] text-[#4f3461] text-xs xl:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span>Admin</span>
+                  </button>
+                )}
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    title="Sair da conta"
+                    aria-label="Sair da conta"
+                    className="min-h-[44px] min-w-[40px] px-2 py-2 rounded-xl bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] text-[#5a4e66] hover:text-[#261d2e] inline-flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  title={user.name}
+                  className="min-h-[44px] px-2.5 py-2 rounded-xl bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] text-[#4f3461] text-xs xl:text-sm font-medium inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer max-w-[120px]"
+                >
+                  <UserIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{user.isAnonymous ? 'Anônima' : user.name.split(' ')[0]}</span>
+                </button>
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    title="Sair da conta"
+                    aria-label="Sair da conta"
+                    className="min-h-[44px] min-w-[40px] px-2 py-2 rounded-xl bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] text-[#5a4e66] hover:text-[#261d2e] inline-flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onQuickExit}
+              title="Disfarçar esta tela imediatamente (tecla ESC)"
+              aria-label="Sair rápido e disfarçar tela (ESC)"
+              className="min-h-[44px] px-2.5 xl:px-3.5 py-2 rounded-xl bg-[#fbf2f4] hover:bg-[#f4e2e7] border border-[#e7cbd3] text-[#7f3347] text-xs xl:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer shrink-0"
+            >
+              <EyeOff className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Sair rápido</span>
+              <span className="hidden xl:inline text-[11px] font-medium text-[#914358] opacity-80">
+                ESC
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 

@@ -3,10 +3,10 @@ import { Report, SupportCenter, ReportComment, User } from '../types';
 import { ReportCommentsSection } from './ReportCommentsSection';
 import L from 'leaflet';
 import { 
-  MapPin, Filter, AlertTriangle, ShieldCheck, Phone, Navigation, PlusCircle, 
-  Building2, Flame, Layers, Clock, ShieldAlert, MessageSquare, ExternalLink, 
-  Globe, Sparkles, Locate, Crosshair, Footprints, Car, X, Compass, CheckCircle2,
-  ArrowRight, HeartPulse, RefreshCw, Mail, Maximize2, Minimize2, HelpCircle
+  MapPin, ShieldCheck, Phone, Navigation, PlusCircle, 
+  Clock, ShieldAlert, MessageSquare, ExternalLink, 
+  Globe, Locate, Footprints, Car, X, Compass,
+  ArrowRight, RefreshCw, Mail, Maximize2, Minimize2, HelpCircle
 } from 'lucide-react';
 import {
   calculateDistanceKm,
@@ -24,40 +24,40 @@ type HeatCluster = PrivacyCluster;
 const getTipoViolenciaPt = (category: string): string => {
   switch (category) {
     case 'importunacao_sexual':
-      return 'Importunação Sexual';
+      return 'Importunação sexual';
     case 'assedio_sexual':
-      return 'Assédio Sexual';
+      return 'Assédio sexual';
     case 'assedio_moral':
-      return 'Assédio Moral';
+      return 'Assédio moral';
     case 'perseguicao':
-      return 'Perseguição (Stalking)';
+      return 'Perseguição (stalking)';
     case 'violencia_psicologica':
-      return 'Violência Psicológica';
+      return 'Violência emocional';
     case 'violencia_virtual':
-      return 'Violência Virtual / Nudez';
+      return 'Violência na internet';
     default:
-      return 'Violência contra a Mulher / Assédio';
+      return 'Situação de assédio ou violência';
   }
 };
 
 const getTipoLocalPt = (locationType: string, address?: string): string => {
   switch (locationType) {
     case 'transporte_publico':
-      return 'Transporte Público / Ônibus';
+      return 'Transporte público / ônibus';
     case 'trabalho':
-      return 'Ambiente de Trabalho';
+      return 'Ambiente de trabalho';
     case 'escola_universidade':
-      return 'Escola / Universidade';
+      return 'Escola ou universidade';
     case 'via_publica':
-      return 'Via Pública / Rua';
+      return 'Rua ou espaço público';
     case 'evento_festa':
-      return 'Evento / Festa';
+      return 'Evento ou festa';
     case 'internet':
-      return 'Ambiente Virtual / Internet';
+      return 'Internet / redes sociais';
     case 'local_privado':
-      return 'Local Privado / Residência';
+      return 'Casa ou local privado';
     default:
-      return address ? address.split('-')[0].trim() : 'Local Público';
+      return address ? address.split('-')[0].trim() : 'Local público';
   }
 };
 
@@ -66,22 +66,22 @@ const formatarDataHoraPt = (dateTimeStr: string, periodOfDay: string): string =>
     const d = new Date(dateTimeStr);
     const dia = String(d.getDate()).padStart(2, '0');
     const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
     ];
-    const mes = meses[d.getMonth()] || 'Agosto';
+    const mes = meses[d.getMonth()] || 'agosto';
     const ano = d.getFullYear() || 2026;
     
     let periodoFormatado = '';
-    if (periodOfDay === 'manha') periodoFormatado = 'Manhã (entre 06:00 e 12:00)';
-    else if (periodOfDay === 'tarde') periodoFormatado = 'Tarde (entre 12:00 e 18:00)';
-    else if (periodOfDay === 'noite') periodoFormatado = 'Noite (entre 18:00 e 00:00)';
-    else if (periodOfDay === 'madrugada') periodoFormatado = 'Madrugada (entre 00:00 e 06:00)';
-    else periodoFormatado = 'Entre 18:00 e 00:00';
+    if (periodOfDay === 'manha') periodoFormatado = 'Manhã (6h às 12h)';
+    else if (periodOfDay === 'tarde') periodoFormatado = 'Tarde (12h às 18h)';
+    else if (periodOfDay === 'noite') periodoFormatado = 'Noite (18h às 0h)';
+    else if (periodOfDay === 'madrugada') periodoFormatado = 'Madrugada (0h às 6h)';
+    else periodoFormatado = 'Noite (18h às 0h)';
 
-    return `${dia} de ${mes} de ${ano} • ${periodoFormatado}`;
+    return `${dia} de ${mes} de ${ano} · ${periodoFormatado}`;
   } catch {
-    return 'Data recente informada pela vítima';
+    return 'Data recente informada';
   }
 };
 
@@ -225,7 +225,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     }
   }, [reports, selectedReport]);
 
-  // Handler para o botão "Mais Detalhes" no mapa de calor
+  // Handler para o botão "Ver detalhes" no popup do mapa
   useEffect(() => {
     (window as any).__abrirDetalhesOcorrencia = (reportId: string) => {
       const rep = reports.find(r => r.id === reportId);
@@ -248,17 +248,11 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   // Filter support centers / delegacias / hospitais
   const filteredCenters = useMemo(() => {
     return supportCenters.filter(sc => {
-      // Type filtering (strict enforcement: if hospital is chosen, never show delegacias, and vice-versa)
       if (centerTypeFilter === 'delegacia' && sc.type !== 'delegacia') return false;
       if (centerTypeFilter === 'hospital' && sc.type !== 'hospital') return false;
       if (centerTypeFilter === 'none') return false;
-
-      // Direct unit focus dropdown
       if (selectedDeamId !== 'all' && sc.id !== selectedDeamId) return false;
-
-      // City filter
       if (selectedCity !== 'all' && sc.city !== selectedCity) return false;
-
       return true;
     });
   }, [supportCenters, centerTypeFilter, selectedCity, selectedDeamId]);
@@ -270,7 +264,10 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     target: 'both' | 'delegacia' | 'hospital' = nearestTargetRef.current
   ) => {
     const pair = findNearestPair(lat, lng, supportCenters);
-    setNearestResult(pair);
+    setNearestResult({
+      delegacia: pair.nearestDelegacia,
+      hospital: pair.nearestHospital
+    });
 
     if (target === 'hospital') {
       setCenterTypeFilter('hospital');
@@ -346,7 +343,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     setIsNearestPanelOpen(true);
 
     if (!navigator.geolocation) {
-      setLocateError('Seu navegador não possui suporte a geolocalização. Selecione uma cidade de SC ou clique no mapa para definir seu ponto.');
+      setLocateError('Este navegador não consegue usar sua localização. Tudo bem: escolha sua cidade abaixo ou toque em um ponto do mapa.');
       setIsLocating(false);
       return;
     }
@@ -361,13 +358,13 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       },
       (error) => {
         console.warn('Geolocation error:', error);
-        let msg = 'Não foi possível obter o GPS.';
+        let msg = 'Não conseguimos encontrar sua localização agora.';
         if (error.code === error.PERMISSION_DENIED) {
-          msg = 'Permissão de localização negada pelo navegador. Você pode selecionar sua cidade abaixo ou clicar diretamente no mapa para definir sua posição.';
+          msg = 'A localização está desligada no navegador, e tudo bem. Você pode escolher sua cidade abaixo ou tocar no mapa.';
         } else if (error.code === error.POSITION_UNAVAILABLE) {
-          msg = 'Informações de GPS indisponíveis. Selecione uma cidade de referência de SC ou clique no mapa.';
+          msg = 'Não conseguimos localizar seu aparelho agora. Escolha uma cidade de SC abaixo ou toque no mapa.';
         } else {
-          msg = 'Tempo limite de GPS esgotado. Selecione uma cidade de referência ou clique no mapa.';
+          msg = 'A busca de localização demorou além do esperado. Escolha sua cidade abaixo ou toque no mapa.';
         }
         setLocateError(msg);
         setIsLocating(false);
@@ -431,7 +428,6 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
         zoomControl: false
       });
 
-      // OpenStreetMap Official Standard Tiles (100% Gratuito, Sem Chave de API)
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
         maxZoom: 19
@@ -446,7 +442,6 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       userLayerGroupRef.current = userLayerGroup;
 
       map.on('click', (e: L.LeafletMouseEvent) => {
-        // Set user location when map is clicked if panel is open or locate mode is active
         setUserLocation({ lat: e.latlng.lat, lng: e.latlng.lng, source: 'map' });
         setLocateError(null);
         setIsNearestPanelOpen(true);
@@ -498,57 +493,51 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     // Group filteredReports into privacy-safe spatial clusters
     const clusters = clusterReportsByProximity(filteredReports, 0.008);
 
-    // Render layered heatmap glow and incident bubble markers with occurrence counts
     clusters.forEach((cluster) => {
-      let color = '#6d4c82'; // calm plum default (baixo)
+      let color = '#6d4c82'; // ameixa suave (baixo)
       let radius = 380;
-      let opacity = 0.28;
+      let opacity = 0.24;
 
       const isClusterGrave = cluster.highestRisk === 'grave' || cluster.highestRisk === 'urgente' || cluster.highestRisk === 'alto';
       const isClusterModerado = cluster.highestRisk === 'moderado' || cluster.highestRisk === 'medio';
 
       if (isClusterGrave) {
-        color = '#b05c72'; // Dusty crimson/rose (Grave)
+        color = '#b05c72'; // rosa queimado (grave)
         radius = 560;
-        opacity = 0.36;
+        opacity = 0.30;
       } else if (isClusterModerado) {
-        color = '#d97706'; // Amber (Moderado)
+        color = '#9a6b4c'; // tom terroso/ocre suave (médio)
         radius = 460;
-        opacity = 0.32;
+        opacity = 0.27;
       }
 
-      // Bonus radius for multiple incidents in the cluster
       radius += Math.min(340, (cluster.count - 1) * 90);
 
       const isSelected = (selectedReport && cluster.reports.some(r => r.id === selectedReport.id)) || (selectedCluster?.id === cluster.id);
 
-      // Soft outer thermal dispersion ring (approximates area for privacy)
       const outerHeatRing = L.circle([cluster.lat, cluster.lng], {
         color: 'transparent',
         fillColor: color,
-        fillOpacity: opacity * 0.45,
+        fillOpacity: opacity * 0.42,
         radius: isSelected ? radius * 1.45 : radius * 1.35,
         stroke: false
       });
       layerGroup.addLayer(outerHeatRing);
 
-      // Core heat circle
       const circle = L.circle([cluster.lat, cluster.lng], {
         color: color,
         fillColor: color,
         fillOpacity: opacity,
         radius: isSelected ? radius * 1.1 : radius * 0.85,
         stroke: true,
-        weight: isSelected ? 2.5 : 1
+        weight: isSelected ? 2 : 1
       });
 
-      // Size calculation based on count
       const size = isSelected
-        ? (cluster.count > 4 ? 42 : cluster.count > 1 ? 36 : 30)
-        : (cluster.count > 4 ? 38 : cluster.count > 1 ? 32 : 26);
-      const fontSize = cluster.count > 99 ? 10 : cluster.count > 9 ? 12 : 13;
+        ? (cluster.count > 4 ? 40 : cluster.count > 1 ? 34 : 28)
+        : (cluster.count > 4 ? 36 : cluster.count > 1 ? 30 : 25);
+      const fontSize = cluster.count > 99 ? 10 : cluster.count > 9 ? 12 : 12.5;
 
-      // Custom DivIcon with number of occurrences inside the bubble
       const iconHtml = `
         <div style="
           background: ${color};
@@ -557,18 +546,17 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           height: ${size}px;
           border-radius: 50%;
           border: 2.5px solid #ffffff;
-          box-shadow: 0 0 ${isSelected ? '20px #facc15' : '10px ' + color}, 0 2px 6px rgba(0,0,0,0.4);
+          box-shadow: 0 2px 8px rgba(38, 29, 46, ${isSelected ? '0.35' : '0.2'});
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 900;
-          font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-weight: 700;
+          font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
           font-size: ${fontSize}px;
           line-height: 1;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.6);
           cursor: pointer;
-          transition: transform 0.15s ease;
-        " title="${cluster.count} ocorrência(s) registrada(s)">
+          transition: transform 0.2s ease;
+        " title="${cluster.count} ${cluster.count === 1 ? 'relato nesta área' : 'relatos nesta área'}">
           ${cluster.count}
         </div>
       `;
@@ -588,22 +576,22 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       const dataHora = formatarDataHoraPt(report.dateTime, report.periodOfDay);
 
       const popupHtml = `
-        <div style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px; line-height: 1.5; color: #0f172a; padding: 4px 2px; min-width: 250px;">
-          <div style="margin-bottom: 5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
-            <span style="color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase;">Tipo de Violência:</span><br/>
-            <strong style="color: #581c87; font-size: 13px; font-weight: 800;">${tipoViolencia}</strong>
+        <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 12.5px; line-height: 1.5; color: #261d2e; padding: 4px 2px; min-width: 240px;">
+          <div style="margin-bottom: 6px; border-bottom: 1px solid #efe9f4; padding-bottom: 5px;">
+            <span style="color: #5a4e66; font-weight: 600; font-size: 11px;">O que aconteceu</span><br/>
+            <strong style="color: #4f3461; font-size: 13px; font-weight: 700;">${tipoViolencia}</strong>
           </div>
-          <div style="margin-bottom: 5px;">
-            <span style="color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase;">Tipo de Local do Ocorrido:</span><br/>
-            <strong style="color: #0f172a; font-weight: 700;">${tipoLocal}, ${report.city}</strong>
+          <div style="margin-bottom: 6px;">
+            <span style="color: #5a4e66; font-weight: 600; font-size: 11px;">Onde foi (aproximado)</span><br/>
+            <strong style="color: #261d2e; font-weight: 600;">${tipoLocal}, ${report.city}</strong>
           </div>
           <div style="margin-bottom: 8px;">
-            <span style="color: #64748b; font-weight: 700; font-size: 11px; text-transform: uppercase;">Data e Hora:</span><br/>
-            <strong style="color: #0f172a; font-weight: 700;">${dataHora}</strong>
+            <span style="color: #5a4e66; font-weight: 600; font-size: 11px;">Quando foi</span><br/>
+            <strong style="color: #261d2e; font-weight: 600;">${dataHora}</strong>
           </div>
-          <div style="padding-top: 4px; border-top: 1px solid #f1f5f9;">
-            <button onclick="window.__abrirDetalhesOcorrencia && window.__abrirDetalhesOcorrencia('${report.id}')" style="width: 100%; background: #7c3aed; color: #ffffff; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: block;">
-              Mais Detalhes →
+          <div style="padding-top: 5px; border-top: 1px solid #efe9f4;">
+            <button onclick="window.__abrirDetalhesOcorrencia && window.__abrirDetalhesOcorrencia('${report.id}')" style="width: 100%; background: #6d4c82; color: #ffffff; font-weight: 600; font-size: 12px; padding: 7px 12px; border-radius: 10px; border: none; cursor: pointer; text-align: center; display: block;">
+              Ver detalhes →
             </button>
           </div>
         </div>
@@ -633,21 +621,21 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
         const categoryLabel = getTipoViolenciaPt(report.category);
 
         marker.bindTooltip(
-          `<div style="font-weight: 800; font-size: 12px; color: #0f172a;">${report.title}</div>
-           <div style="font-size: 11px; color: #475569; margin-top: 2px;">
-             <span style="font-weight: 800; color: ${color};">● 1 ocorrência</span> • ${categoryLabel} • Gravidade ${formatRiskLabel(report.riskLevel)}
+          `<div style="font-weight: 700; font-size: 12px; color: #261d2e;">${report.title}</div>
+           <div style="font-size: 11px; color: #5a4e66; margin-top: 2px;">
+             <span style="font-weight: 700; color: ${color};">● 1 relato</span> · ${categoryLabel} · ${formatRiskLabel(report.riskLevel)}
            </div>
-           <div style="font-size: 10px; color: #64748b; margin-top: 2px;">${report.address}, ${report.city}</div>`,
+           <div style="font-size: 10.5px; color: #6b5e77; margin-top: 2px;">${report.address}, ${report.city}</div>`,
           { direction: 'top', offset: [0, -size / 2] }
         );
       } else {
         marker.bindTooltip(
-          `<div style="font-weight: 800; font-size: 12px; color: #0f172a;">📍 Hotspot: ${cluster.count} ocorrências na região</div>
-           <div style="font-size: 11px; color: ${color}; font-weight: 700; margin-top: 2px;">
-             Gravidade máxima: ${formatRiskLabel(cluster.highestRisk)}
+          `<div style="font-weight: 700; font-size: 12px; color: #261d2e;">${cluster.count} relatos nesta área aproximada</div>
+           <div style="font-size: 11px; color: ${color}; font-weight: 600; margin-top: 2px;">
+             Nível mais alto: ${formatRiskLabel(cluster.highestRisk)}
            </div>
-           <div style="font-size: 10px; color: #64748b; margin-top: 2px;">${cluster.address}, ${cluster.city}</div>
-           <div style="font-size: 10px; color: #7c3aed; font-weight: 700; margin-top: 4px;">Clique para inspecionar os ${cluster.count} relatos</div>`,
+           <div style="font-size: 10.5px; color: #6b5e77; margin-top: 2px;">${cluster.address}, ${cluster.city}</div>
+           <div style="font-size: 10.5px; color: #6d4c82; font-weight: 600; margin-top: 4px;">Toque para ver os ${cluster.count} relatos</div>`,
           { direction: 'top', offset: [0, -size / 2] }
         );
       }
@@ -662,39 +650,38 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
         const isDelegacia = center.type === 'delegacia' || center.type === 'central_policia';
         const isSelected = selectedCenter?.id === center.id;
 
-        // Custom marker pin: Viatura Policial para Delegacia, Cruz Vermelha para Hospital
         const supportIconHtml = isDelegacia ? `
           <div style="
-            background: #1e1b4b;
+            background: #4f3461;
             color: #ffffff;
             width: ${isSelected ? '34px' : '28px'};
             height: ${isSelected ? '34px' : '28px'};
-            border-radius: 8px;
-            border: 2px solid ${isSelected ? '#facc15' : '#ffffff'};
+            border-radius: 9px;
+            border: 2px solid #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: ${isSelected ? '18px' : '15px'};
-            box-shadow: 0 0 ${isSelected ? '18px #facc15' : '10px rgba(30, 27, 75, 0.8)'};
+            font-size: ${isSelected ? '16px' : '14px'};
+            box-shadow: 0 2px 8px rgba(38, 29, 46, 0.28);
             cursor: pointer;
             transition: all 0.2s ease;
-          " title="Viatura Policial - Delegacia da Mulher (DPCAMI / DEAM)">🚓</div>
+          " title="Delegacia que atende mulheres (DPCAMI / DEAM)">🚓</div>
         ` : `
           <div style="
             background: #ffffff;
-            color: #dc2626;
+            color: #b05c72;
             width: ${isSelected ? '34px' : '28px'};
             height: ${isSelected ? '34px' : '28px'};
-            border-radius: 8px;
-            border: 2px solid ${isSelected ? '#facc15' : '#ef4444'};
+            border-radius: 9px;
+            border: 2px solid #b05c72;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 ${isSelected ? '18px #facc15' : '10px rgba(220, 38, 38, 0.5)'};
+            box-shadow: 0 2px 8px rgba(176, 92, 114, 0.25);
             cursor: pointer;
             transition: all 0.2s ease;
-          " title="Cruz Vermelha - Hospital de Urgência SC">
-            <svg viewBox="0 0 24 24" width="${isSelected ? '20' : '16'}" height="${isSelected ? '20' : '16'}" fill="#dc2626">
+          " title="Hospital 24h de acolhimento em SC">
+            <svg viewBox="0 0 24 24" width="${isSelected ? '18' : '15'}" height="${isSelected ? '18' : '15'}" fill="#b05c72">
               <path d="M8.5 2h7v6.5H22v7h-6.5V22h-7v-6.5H2v-7h6.5V2z"/>
             </svg>
           </div>
@@ -716,8 +703,8 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
         });
 
         supportMarker.bindTooltip(`
-          <div style="font-weight: bold; font-size: 11px; color: #0f172a;">${center.name}</div>
-          <div style="font-size: 10px; color: #475569;">${center.city} (${center.state})</div>
+          <div style="font-weight: 600; font-size: 11.5px; color: #261d2e;">${center.name}</div>
+          <div style="font-size: 10.5px; color: #5a4e66;">${center.city} (${center.state})</div>
         `, { direction: 'top', offset: [0, -12] });
 
         layerGroup.addLayer(supportMarker);
@@ -734,9 +721,6 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
     if (!userLocation) return;
 
-    // User location marker
-    // CRITICAL: When the user chooses based on city (source === 'city'), EXCLUDE "Sua Localização" and dashed lines from the map!
-    // The user's location pin should ONLY appear when using actual GPS (source === 'gps') or map click (source === 'map').
     if (userLocation.source !== 'city') {
       const userPinHtml = `
         <div style="
@@ -759,7 +743,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             align-items: center;
             justify-content: center;
             font-size: 14px;
-            box-shadow: 0 4px 12px rgba(109, 76, 130, 0.45);
+            box-shadow: 0 3px 10px rgba(109, 76, 130, 0.35);
           ">📍</div>
         </div>
       `;
@@ -777,8 +761,8 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       });
 
       userMarker.bindTooltip(`
-        <div style="font-weight: bold; font-size: 11px; color: #1e3a8a;">Sua Localização</div>
-        <div style="font-size: 10px; color: #475569;">${userLocation.source === 'gps' ? 'Localização GPS' : 'Ponto Marcado no Mapa'}</div>
+        <div style="font-weight: 600; font-size: 11px; color: #4f3461;">Ponto de referência</div>
+        <div style="font-size: 10px; color: #5a4e66;">${userLocation.source === 'gps' ? 'Sua localização atual' : 'Ponto marcado no mapa'}</div>
       `, { direction: 'top', offset: [0, -14] });
 
       group.addLayer(userMarker);
@@ -786,7 +770,6 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
     const boundsPoints: [number, number][] = userLocation.source !== 'city' ? [[userLocation.lat, userLocation.lng]] : [];
 
-    // Polyline to nearest facilities - ONLY when user provided real GPS or clicked on map (exclude for city selection)
     if (nearestResult && userLocation.source !== 'city') {
       if ((nearestTarget === 'both' || nearestTarget === 'delegacia') && nearestResult.delegacia) {
         const deam = nearestResult.delegacia.center;
@@ -796,12 +779,12 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           [userLocation.lat, userLocation.lng],
           [deam.lat, deam.lng]
         ], {
-          color: '#9333ea',
-          weight: 3.5,
+          color: '#6d4c82',
+          weight: 3,
           dashArray: '6, 8',
-          opacity: 0.9
+          opacity: 0.85
         });
-        polyline.bindTooltip(`🚓 Delegacia mais próxima: ${formatDistance(nearestResult.delegacia.distanceKm)}`, {
+        polyline.bindTooltip(`Delegacia mais próxima: ${formatDistance(nearestResult.delegacia.distanceKm)}`, {
           sticky: true
         });
         group.addLayer(polyline);
@@ -815,12 +798,12 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           [userLocation.lat, userLocation.lng],
           [hosp.lat, hosp.lng]
         ], {
-          color: '#0284c7',
-          weight: 3.5,
+          color: '#b05c72',
+          weight: 3,
           dashArray: '6, 8',
-          opacity: 0.9
+          opacity: 0.85
         });
-        polyline.bindTooltip(`✚ Hospital mais próximo: ${formatDistance(nearestResult.hospital.distanceKm)}`, {
+        polyline.bindTooltip(`Hospital mais próximo: ${formatDistance(nearestResult.hospital.distanceKm)}`, {
           sticky: true
         });
         group.addLayer(polyline);
@@ -828,7 +811,6 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     }
 
     if (userLocation.source === 'city') {
-      // When locating based on city: focus cleanly on the hospital/delegacia in that city without displaying any user location marker
       const targetCenter = selectedCenter || (nearestTarget === 'hospital' ? nearestResult?.hospital?.center : nearestResult?.delegacia?.center);
       if (targetCenter && mapInstanceRef.current) {
         mapInstanceRef.current.setView([targetCenter.lat, targetCenter.lng], 15);
@@ -853,22 +835,22 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     if (selectedCenter && (centerTypeFilter === 'all' || selectedCenter.type === centerTypeFilter)) {
       return (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex items-start justify-between gap-2 border-b border-[#efe9f4] pb-3">
             <div>
-              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border inline-block ${
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border inline-block ${
                 selectedCenter.type === 'delegacia'
-                  ? 'text-purple-900 bg-purple-100 border-purple-200'
+                  ? 'text-[#4f3461] bg-[#f3eef8] border-[#ddd1ea]'
                   : selectedCenter.type === 'central_policia'
-                  ? 'text-amber-900 bg-amber-100 border-amber-200'
-                  : 'text-rose-900 bg-rose-100 border-rose-200'
+                  ? 'text-[#6e4f16] bg-[#fcf7eb] border-[#ebd7ad]'
+                  : 'text-[#7f3347] bg-[#fbf2f4] border-[#ead4dc]'
               }`}>
                 {selectedCenter.type === 'delegacia' 
-                  ? '🚓 Delegacia da Mulher (DPCAMI / DEAM)' 
+                  ? 'DPCAMI / DEAM · Delegacia que atende mulheres' 
                   : selectedCenter.type === 'central_policia'
-                  ? '🚨 Central de Plantão Policial (CPP 24h)'
-                  : '✚ Hospital de Apoio SC'}
+                  ? 'Central de Plantão Policial (24h)'
+                  : 'Hospital 24h de acolhimento (SC)'}
               </span>
-              <h3 className="text-base font-bold text-slate-900 mt-1.5 font-heading">
+              <h3 className="text-base font-semibold text-[#261d2e] mt-1.5 font-heading">
                 {selectedCenter.name}
               </h3>
             </div>
@@ -884,86 +866,85 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             </button>
           </div>
 
-          {/* Distance from User if location is set */}
           {userLocation && (
-            <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl space-y-1.5 text-xs">
-              <div className="flex items-center justify-between font-bold text-blue-950">
+            <div className="p-3 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl space-y-1.5 text-xs">
+              <div className="flex items-center justify-between font-semibold text-[#261d2e]">
                 <span className="flex items-center gap-1.5">
-                  <Navigation className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Distância de você:</span>
+                  <Navigation className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
+                  <span>Distância aproximada:</span>
                 </span>
-                <span className="bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-900 font-extrabold">
+                <span className="bg-white px-2.5 py-0.5 rounded-lg border border-[#ddd1ea] text-[#4f3461] font-semibold tabular-nums">
                   {formatDistance(calculateDistanceKm(userLocation.lat, userLocation.lng, selectedCenter.lat, selectedCenter.lng))}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-[11px] text-blue-800">
+              <div className="flex items-center gap-3 text-xs text-[#5a4e66]">
                 <span className="flex items-center gap-1">
-                  <Footprints className="w-3 h-3 text-blue-600" />
+                  <Footprints className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
                   <span>~{Math.max(1, Math.round((calculateDistanceKm(userLocation.lat, userLocation.lng, selectedCenter.lat, selectedCenter.lng) / 4.5) * 60))} min a pé</span>
                 </span>
-                <span>•</span>
+                <span>·</span>
                 <span className="flex items-center gap-1">
-                  <Car className="w-3 h-3 text-blue-600" />
+                  <Car className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
                   <span>~{Math.max(1, Math.round((calculateDistanceKm(userLocation.lat, userLocation.lng, selectedCenter.lat, selectedCenter.lng) / 35) * 60))} min de carro</span>
                 </span>
               </div>
             </div>
           )}
 
-          <div className="space-y-2 text-xs text-slate-700">
+          <div className="space-y-2 text-xs sm:text-sm text-[#493d54]">
             <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+              <MapPin className="w-4 h-4 text-[#6d4c82] shrink-0 mt-0.5" aria-hidden="true" />
               <span>
                 {selectedCenter.address}, {selectedCenter.city} ({selectedCenter.state})
-                {selectedCenter.postalCode && <span className="text-slate-500 block text-[11px]">CEP: {selectedCenter.postalCode}</span>}
+                {selectedCenter.postalCode && <span className="text-[#6b5e77] block text-xs">CEP: {selectedCenter.postalCode}</span>}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-purple-600 shrink-0" />
-              <span>Atendimento: <strong>{selectedCenter.hours}</strong></span>
+              <Clock className="w-4 h-4 text-[#6d4c82] shrink-0" aria-hidden="true" />
+              <span>Horário: <strong className="text-[#261d2e]">{selectedCenter.hours}</strong></span>
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
-            <p className="text-slate-700">
-              <strong className="text-slate-900">Telefone:</strong> {selectedCenter.phone}
+          <div className="p-3.5 bg-[#faf8fb] rounded-xl border border-[#efe9f4] space-y-2 text-xs sm:text-sm">
+            <p className="text-[#493d54]">
+              <strong className="text-[#261d2e]">Telefone:</strong> {selectedCenter.phone}
               {selectedCenter.ramal && (
-                <span className="ml-2 text-purple-800 font-semibold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                <span className="ml-2 text-[#4f3461] font-medium bg-[#f3eef8] px-2 py-0.5 rounded-lg border border-[#ddd1ea] text-xs">
                   Ramal: {selectedCenter.ramal}
                 </span>
               )}
             </p>
 
             {selectedCenter.email && (
-              <p className="text-slate-700 flex items-center gap-1.5 flex-wrap">
-                <strong className="text-slate-900">E-mail Oficial:</strong>
+              <p className="text-[#493d54] flex items-center gap-1.5 flex-wrap">
+                <strong className="text-[#261d2e]">E-mail:</strong>
                 <a
                   href={`mailto:${selectedCenter.email}`}
-                  className="text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1 underline break-all"
+                  className="text-[#4f3461] hover:text-[#261d2e] font-medium flex items-center gap-1 underline break-all"
                 >
-                  <Mail className="w-3.5 h-3.5 text-purple-600" />
+                  <Mail className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
                   <span>{selectedCenter.email}</span>
                 </a>
               </p>
             )}
 
             {selectedCenter.whatsapp && (
-              <p className="text-slate-700 flex items-center gap-1.5 flex-wrap">
-                <strong className="text-slate-900">WhatsApp Denúncia:</strong>
+              <p className="text-[#493d54] flex items-center gap-1.5 flex-wrap">
+                <strong className="text-[#261d2e]">WhatsApp:</strong>
                 <a
-                  href={`https://wa.me/${selectedCenter.whatsapp}?text=${encodeURIComponent('Olá, gostaria de orientação/denúncia.')}`}
+                  href={`https://wa.me/${selectedCenter.whatsapp}?text=${encodeURIComponent('Olá, gostaria de orientação e apoio.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 underline"
+                  className="text-[#26543b] hover:underline font-semibold flex items-center gap-1"
                 >
-                  <MessageSquare className="w-3.5 h-3.5" />
+                  <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>(48) 98844-0083</span>
                 </a>
               </p>
             )}
           </div>
 
-          <div className="pt-2 space-y-2">
+          <div className="pt-1 space-y-2">
             <div className="flex gap-2">
               <a
                 href={`tel:${(() => {
@@ -971,7 +952,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                   const dddPart = parts.find((p) => /\(\d{2}\)/.test(p)) || parts[0] || '';
                   return dddPart.replace(/[^0-9]/g, '');
                 })()}`}
-                className="flex-1 min-h-[44px] py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="flex-1 min-h-[44px] py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Phone className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Ligar</span>
@@ -981,11 +962,11 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 href={`https://www.google.com/maps/dir/?api=1&destination=${selectedCenter.lat},${selectedCenter.lng}${userLocation ? `&origin=${userLocation.lat},${userLocation.lng}` : ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                className="flex-1 min-h-[44px] py-2 bg-[#f3eef8] hover:bg-[#eae1f3] border border-[#ddd1ea] text-[#4f3461] font-semibold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Navigation className="w-3.5 h-3.5" />
-                <span>Como Chegar</span>
-                <ExternalLink className="w-3 h-3 text-purple-200" />
+                <Navigation className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Como chegar</span>
+                <ExternalLink className="w-3 h-3" aria-hidden="true" />
               </a>
             </div>
 
@@ -994,11 +975,11 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 href={selectedCenter.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full min-h-[44px] py-2 bg-[#faf8fb] hover:bg-[#f3eef8] border border-[#e6dfee] text-[#493d54] font-medium rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <Globe className="w-3.5 h-3.5 text-purple-600" />
-                <span>Acessar Portal da Unidade</span>
-                <ExternalLink className="w-3 h-3 text-slate-500" />
+                <Globe className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
+                <span>Abrir site do local</span>
+                <ExternalLink className="w-3 h-3 text-[#6b5e77]" aria-hidden="true" />
               </a>
             )}
           </div>
@@ -1009,21 +990,21 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     if (selectedReport) {
       return (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex items-start justify-between gap-2 border-b border-[#efe9f4] pb-3">
             <div>
-              <span className={`text-[10px] uppercase font-extrabold px-2 py-0.5 rounded border ${
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border inline-block ${
                 (selectedReport.riskLevel === 'grave' || selectedReport.riskLevel === 'urgente' || selectedReport.riskLevel === 'alto')
-                  ? 'bg-rose-100 text-rose-800 border-rose-200' :
+                  ? 'bg-[#fbf2f4] text-[#7f3347] border-[#ead4dc]' :
                 (selectedReport.riskLevel === 'moderado' || selectedReport.riskLevel === 'medio')
-                  ? 'bg-amber-100 text-amber-900 border-amber-200' :
-                  'bg-blue-100 text-blue-800 border-blue-200'
+                  ? 'bg-[#faf5ee] text-[#6b4f2d] border-[#e8dcc8]' :
+                  'bg-[#f3eef8] text-[#4f3461] border-[#ddd1ea]'
               }`}>
-                Gravidade {
-                  (selectedReport.riskLevel === 'grave' || selectedReport.riskLevel === 'urgente' || selectedReport.riskLevel === 'alto') ? 'Grave' :
-                  (selectedReport.riskLevel === 'moderado' || selectedReport.riskLevel === 'medio') ? 'Média' : 'Baixa'
+                Nível {
+                  (selectedReport.riskLevel === 'grave' || selectedReport.riskLevel === 'urgente' || selectedReport.riskLevel === 'alto') ? 'grave' :
+                  (selectedReport.riskLevel === 'moderado' || selectedReport.riskLevel === 'medio') ? 'médio' : 'baixo'
                 }
               </span>
-              <h3 className="text-base font-bold text-slate-900 mt-1.5 font-heading">
+              <h3 className="text-base font-semibold text-[#261d2e] mt-1.5 font-heading">
                 {selectedReport.title}
               </h3>
             </div>
@@ -1039,29 +1020,29 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             </button>
           </div>
 
-          {/* Multi-report cluster selector if bubble has multiple occurrences */}
           {selectedCluster && selectedCluster.reports.length > 1 && (
-            <div className="bg-purple-50 p-2.5 rounded-xl border border-purple-200 space-y-1.5">
+            <div className="bg-[#f3eef8] p-3 rounded-xl border border-[#ddd1ea] space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-purple-950 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-purple-600 text-white font-black text-[11px] flex items-center justify-center">
+                <span className="font-semibold text-[#261d2e] flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#6d4c82] text-white font-semibold text-[11px] flex items-center justify-center tabular-nums">
                     {selectedCluster.reports.length}
                   </span>
-                  <span>Denúncias nesta mesma área</span>
+                  <span>Relatos nesta mesma área</span>
                 </span>
-                <span className="text-[10px] bg-purple-200 text-purple-900 font-extrabold px-1.5 py-0.5 rounded">
-                  Hotspot
+                <span className="text-[11px] bg-white text-[#4f3461] border border-[#ddd1ea] font-medium px-2 py-0.5 rounded-lg">
+                  Área aproximada
                 </span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                 {selectedCluster.reports.map((r, idx) => (
                   <button
                     key={r.id}
+                    type="button"
                     onClick={() => setSelectedReport(r)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                       selectedReport.id === r.id
-                        ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-white text-slate-700 hover:bg-purple-100 border border-purple-200'
+                        ? 'bg-[#6d4c82] text-white'
+                        : 'bg-white text-[#493d54] hover:bg-[#faf8fb] border border-[#ddd1ea]'
                     }`}
                   >
                     #{idx + 1} ({
@@ -1074,50 +1055,45 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
             </div>
           )}
 
-          {/* Informações Estruturadas em Português */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs text-slate-800 shadow-2xs font-sans leading-relaxed">
+          <div className="bg-[#faf8fb] border border-[#efe9f4] rounded-xl p-3.5 space-y-1.5 text-xs sm:text-sm text-[#493d54] leading-relaxed">
             <div>
-              <span className="text-slate-500 font-semibold">Tipo de Violência: </span>
-              <strong className="text-purple-950 font-black">{getTipoViolenciaPt(selectedReport.category)}</strong>
+              <span className="text-[#5a4e66] font-medium">O que aconteceu: </span>
+              <strong className="text-[#261d2e] font-semibold">{getTipoViolenciaPt(selectedReport.category)}</strong>
             </div>
             <div>
-              <span className="text-slate-500 font-semibold">Tipo de Local do Ocorrido: </span>
-              <strong className="text-slate-900 font-black">{getTipoLocalPt(selectedReport.locationType, selectedReport.address)}, {selectedReport.city}</strong>
+              <span className="text-[#5a4e66] font-medium">Onde foi: </span>
+              <strong className="text-[#261d2e] font-semibold">{getTipoLocalPt(selectedReport.locationType, selectedReport.address)}, {selectedReport.city}</strong>
             </div>
             <div>
-              <span className="text-slate-500 font-semibold">Data e Hora: </span>
-              <strong className="text-slate-900 font-black">{formatarDataHoraPt(selectedReport.dateTime, selectedReport.periodOfDay)}</strong>
+              <span className="text-[#5a4e66] font-medium">Quando foi: </span>
+              <strong className="text-[#261d2e] font-semibold">{formatarDataHoraPt(selectedReport.dateTime, selectedReport.periodOfDay)}</strong>
             </div>
           </div>
 
-          <div className="space-y-2 text-xs text-slate-600">
+          <div className="space-y-1.5 text-xs text-[#5a4e66]">
             <div className="flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+              <MapPin className="w-3.5 h-3.5 text-[#6d4c82] shrink-0" aria-hidden="true" />
               <span>{selectedReport.address}, {selectedReport.city} ({selectedReport.state})</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-              <span>Data: {new Date(selectedReport.dateTime).toLocaleDateString('pt-BR')} • Período: {selectedReport.periodOfDay}</span>
-            </div>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed max-h-36 overflow-y-auto">
-            <p className="font-bold text-slate-900 mb-1">Descrição do Relato:</p>
+          <div className="p-3.5 bg-[#faf8fb] rounded-xl border border-[#efe9f4] text-xs sm:text-sm text-[#493d54] leading-relaxed max-h-36 overflow-y-auto">
+            <p className="font-semibold text-[#261d2e] mb-1">O que foi contado:</p>
             {selectedReport.description}
           </div>
 
-          <div className="pt-2 space-y-2">
+          <div className="pt-1 space-y-2">
             {onSelectReportForTrack && (
               <button
+                type="button"
                 onClick={() => onSelectReportForTrack(selectedReport.id)}
-                className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
+                className="w-full min-h-[44px] py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <span>Acompanhar Protocolo {selectedReport.id}</span>
+                <span>Acompanhar relato {selectedReport.id}</span>
               </button>
             )}
           </div>
 
-          {/* Seção Interativa de Comentários e Apoio */}
           {onAddComment && (
             <ReportCommentsSection
               reportId={selectedReport.id}
@@ -1133,15 +1109,15 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     return (
       <div className="space-y-4 flex-1 flex flex-col justify-between">
         <div className="space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-            <h3 className="text-sm font-extrabold text-slate-900 font-heading">
-              {riskFilter === 'grave' ? 'Ocorrências: Gravidade Grave' :
-               riskFilter === 'medio' || riskFilter === 'moderado' ? 'Ocorrências: Gravidade Média' :
-               riskFilter === 'baixo' || riskFilter === 'leve' ? 'Ocorrências: Gravidade Baixa' :
-               'Todas as Ocorrências Registradas'}
+          <div className="flex items-center justify-between border-b border-[#efe9f4] pb-2.5">
+            <h3 className="text-sm font-semibold text-[#261d2e] font-heading">
+              {riskFilter === 'grave' ? 'Relatos no mapa · Nível grave' :
+               riskFilter === 'medio' || riskFilter === 'moderado' ? 'Relatos no mapa · Nível médio' :
+               riskFilter === 'baixo' || riskFilter === 'leve' ? 'Relatos no mapa · Nível baixo' :
+               'Relatos no mapa'}
             </h3>
-            <span className="text-xs bg-purple-100 text-purple-900 px-2 py-0.5 rounded border border-purple-200 font-bold">
-              {filteredReports.length} {filteredReports.length === 1 ? 'Relato' : 'Relatos'}
+            <span className="text-xs bg-[#f3eef8] text-[#4f3461] px-2.5 py-0.5 rounded-lg border border-[#ddd1ea] font-semibold tabular-nums">
+              {filteredReports.length} {filteredReports.length === 1 ? 'relato' : 'relatos'}
             </span>
           </div>
 
@@ -1150,21 +1126,21 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               <div className="p-5 text-center bg-[#faf8fb] rounded-xl border border-dashed border-[#ddd1ea] text-[#5a4e66] space-y-3">
                 <p className="text-sm font-semibold text-[#261d2e]">
                   {dataScope === 'real_only'
-                    ? 'Ainda não há novos registros enviados por usuárias neste filtro.'
-                    : 'Nenhuma ocorrência encontrada para os filtros selecionados.'}
+                    ? 'Ainda não há novos relatos enviados neste filtro.'
+                    : 'Não encontramos relatos com os filtros escolhidos.'}
                 </p>
                 <p className="text-xs text-[#5a4e66] leading-relaxed">
-                  Você pode contribuir registrando uma ocorrência com localização aproximada ou fictícia para fortalecer a prevenção coletiva.
+                  Se quiser, você pode contar o que aconteceu usando um ponto aproximado e sem se identificar.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                   {onOpenNewReport && (
                     <button
                       type="button"
                       onClick={onOpenNewReport}
-                      className="min-h-[40px] px-4 py-2 rounded-xl bg-[#6d4c82] hover:bg-[#593c6b] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                      className="min-h-[44px] px-4 py-2 rounded-xl bg-[#b05c72] hover:bg-[#914358] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
                     >
                       <PlusCircle className="w-4 h-4" aria-hidden="true" />
-                      <span>Registrar ocorrência</span>
+                      <span>Contar o que aconteceu</span>
                     </button>
                   )}
                   {(dataScope === 'real_only' || riskFilter !== 'all' || selectedCity !== 'all' || categoryFilter !== 'all' || periodFilter !== 'all') && (
@@ -1177,7 +1153,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                         setCategoryFilter('all');
                         setPeriodFilter('all');
                       }}
-                      className="min-h-[40px] px-3.5 py-2 rounded-xl bg-white border border-[#e6dfee] text-xs font-medium text-[#4f3461] cursor-pointer"
+                      className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white border border-[#e6dfee] text-xs font-medium text-[#4f3461] cursor-pointer"
                     >
                       Limpar filtros
                     </button>
@@ -1188,47 +1164,45 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
               filteredReports.map((rep) => (
                 <article 
                   key={rep.id}
-                  className="p-3.5 bg-white border border-[#e6dfee] rounded-xl space-y-2"
+                  className="p-3.5 bg-[#faf8fb] hover:bg-[#f3eef8]/50 border border-[#e6dfee] rounded-xl space-y-2 transition-colors"
                 >
                   <div className="flex items-center justify-between border-b border-[#efe9f4] pb-1.5">
                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${
-                      (rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'bg-[#fbf2f4] text-[#7f3347] border border-[#eed4dc]' :
-                      (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'bg-[#fcf7eb] text-[#6e4f16] border border-[#ebd7ad]' :
+                      (rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'bg-[#fbf2f4] text-[#7f3347] border border-[#ead4dc]' :
+                      (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'bg-[#faf5ee] text-[#6b4f2d] border border-[#e8dcc8]' :
                       'bg-[#f3eef8] text-[#4f3461] border border-[#ddd1ea]'
                     }`}>
-                      Gravidade: {(rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'Grave' :
-                       (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'Média' : 'Baixa'}
+                      Nível {(rep.riskLevel === 'grave' || rep.riskLevel === 'urgente' || rep.riskLevel === 'alto') ? 'grave' :
+                       (rep.riskLevel === 'moderado' || rep.riskLevel === 'medio') ? 'médio' : 'baixo'}
                     </span>
                     <div className="flex items-center gap-1.5">
                       {rep.comments && rep.comments.length > 0 && (
-                        <span className="text-[11px] text-[#4f3461] bg-[#f3eef8] font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1" title={`${rep.comments.length} comentários`}>
+                        <span className="text-[11px] text-[#4f3461] bg-[#f3eef8] font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1" title={`${rep.comments.length} mensagens de apoio`}>
                           <MessageSquare className="w-3 h-3" aria-hidden="true" />
                           <span>{rep.comments.length}</span>
                         </span>
                       )}
-                      <span className="text-[11px] text-[#4f3461] font-semibold bg-[#faf8fb] px-2 py-0.5 rounded-lg border border-[#e6dfee]">
+                      <span className="text-[11px] text-[#5a4e66] font-medium bg-white px-2 py-0.5 rounded-lg border border-[#e6dfee]">
                         #{rep.id.replace(/^ASK-\d{4}-/, '')}
                       </span>
                     </div>
                   </div>
 
-                  {/* Informações Obrigatórias em Português */}
-                  <div className="space-y-1.5 text-xs text-[#493d54] leading-snug">
+                  <div className="space-y-1 text-xs text-[#493d54] leading-snug">
                     <div>
-                      <span className="text-[#5a4e66] font-medium">Tipo de violência: </span>
+                      <span className="text-[#5a4e66]">O que aconteceu: </span>
                       <strong className="text-[#261d2e] font-semibold">{getTipoViolenciaPt(rep.category)}</strong>
                     </div>
                     <div>
-                      <span className="text-[#5a4e66] font-medium">Local aproximado: </span>
+                      <span className="text-[#5a4e66]">Onde foi: </span>
                       <strong className="text-[#261d2e] font-semibold">{getTipoLocalPt(rep.locationType, rep.address)}, {rep.city}</strong>
                     </div>
                     <div>
-                      <span className="text-[#5a4e66] font-medium">Data e período: </span>
+                      <span className="text-[#5a4e66]">Quando foi: </span>
                       <strong className="text-[#261d2e] font-semibold">{formatarDataHoraPt(rep.dateTime, rep.periodOfDay)}</strong>
                     </div>
                   </div>
 
-                  {/* Botão Mais Detalhes */}
                   <div className="pt-2 border-t border-[#efe9f4] flex items-center justify-between gap-2">
                     <span className="text-xs text-[#5a4e66] truncate max-w-[165px]" title={rep.address}>
                       {rep.address}
@@ -1244,7 +1218,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                       }}
                       className="min-h-[44px] px-3.5 py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer shrink-0"
                     >
-                      <span>Mais detalhes</span>
+                      <span>Ver detalhes</span>
                       <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
                   </div>
@@ -1254,13 +1228,13 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
           </div>
         </div>
 
-        <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 space-y-1">
-          <div className="flex items-center gap-2 font-bold text-purple-900">
-            <ShieldAlert className="w-4 h-4 text-purple-600" />
-            <span>Canais de Atendimento Imediato</span>
+        <div className="p-3.5 bg-[#f3eef8] border border-[#ddd1ea] rounded-xl text-xs text-[#493d54] space-y-1">
+          <div className="flex items-center gap-2 font-semibold text-[#4f3461]">
+            <ShieldAlert className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
+            <span>Se precisar de ajuda agora</span>
           </div>
-          <p className="text-[11px] text-purple-900/90 leading-normal font-medium">
-            <strong className="text-slate-900 font-extrabold">190</strong> (Polícia Militar) e Denúncia Anônima <strong className="text-slate-900 font-extrabold">181</strong> ou pelo WhatsApp no <strong className="text-emerald-700 font-extrabold">(48) 98844-0083</strong> (Polícia Civil de Santa Catarina).
+          <p className="text-xs text-[#493d54] leading-relaxed">
+            Em perigo imediato, ligue <strong className="text-[#261d2e]">190</strong>. Para apoio à mulher 24h, ligue <strong className="text-[#261d2e]">180</strong>. Em SC, também há o <strong className="text-[#261d2e]">181</strong> e o WhatsApp <strong className="text-[#26543b]">(48) 98844-0083</strong>.
           </p>
         </div>
       </div>
@@ -1268,33 +1242,33 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Map Header & Filter Controls Bar */}
-      <div className="bg-white border border-[#e6dfee] rounded-2xl p-4 sm:p-5 space-y-4">
+      <div className="bg-white border border-[#e6dfee] rounded-2xl p-5 sm:p-6 space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="space-y-1">
             {mode === 'locator' ? (
               <>
                 <p className="text-xs font-semibold text-[#6d4c82]">
-                  Localizador em Santa Catarina
+                  Ajuda perto de você em Santa Catarina
                 </p>
-                <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading mt-0.5">
-                  Delegacia ou hospital mais próximo
+                <h2 className="text-lg sm:text-2xl font-semibold text-[#261d2e] font-heading">
+                  Delegacia da mulher ou hospital mais perto de você
                 </h2>
-                <p className="text-xs sm:text-sm text-[#5a4e66]">
-                  Encontre no mapa a Delegacia da Mulher (DPCAMI) ou Hospital 24h mais perto de você.
+                <p className="text-xs sm:text-sm text-[#5a4e66] max-w-2xl leading-relaxed">
+                  Veja no mapa as DPCAMIs / DEAMs (delegacias que atendem mulheres) e os hospitais 24h em Santa Catarina.
                 </p>
               </>
             ) : (
               <>
                 <p className="text-xs font-semibold text-[#6d4c82]">
-                  Mapa de Calor preventivo em Santa Catarina
+                  Mapa de segurança em Santa Catarina
                 </p>
-                <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading mt-0.5">
-                  Áreas de incidência e pontos de apoio
+                <h2 className="text-lg sm:text-2xl font-semibold text-[#261d2e] font-heading">
+                  Onde há mais relatos e onde você pode buscar ajuda
                 </h2>
-                <p className="text-xs sm:text-sm text-[#5a4e66]">
-                  Todas as coordenadas exibidas são aproximadas ou fictícias (~600 m) para proteger quem registra. Inclui delegacias e hospitais de SC.
+                <p className="text-xs sm:text-sm text-[#5a4e66] max-w-2xl leading-relaxed">
+                  Os pontos no mapa são aproximados, para proteger quem conta o que viveu. Aqui você também encontra delegacias e hospitais de SC.
                 </p>
               </>
             )}
@@ -1306,21 +1280,21 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setDataScope('all')}
-                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold cursor-pointer transition-colors ${
+                  className={`min-h-[38px] px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors ${
                     dataScope === 'all'
                       ? 'bg-[#6d4c82] text-white'
-                      : 'text-[#4f3461] hover:bg-white/60'
+                      : 'text-[#4f3461] hover:bg-white/70'
                   }`}
                 >
-                  Todos (inclui exemplos)
+                  Todos, com exemplos
                 </button>
                 <button
                   type="button"
                   onClick={() => setDataScope('real_only')}
-                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold cursor-pointer transition-colors ${
+                  className={`min-h-[38px] px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors ${
                     dataScope === 'real_only'
                       ? 'bg-[#6d4c82] text-white'
-                      : 'text-[#4f3461] hover:bg-white/60'
+                      : 'text-[#4f3461] hover:bg-white/70'
                   }`}
                 >
                   Somente novos registros
@@ -1335,7 +1309,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 className="min-h-[44px] px-4 py-2 rounded-xl bg-[#b05c72] hover:bg-[#914358] text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span>Registrar ocorrência</span>
+                <span>Contar o que aconteceu</span>
               </button>
             )}
 
@@ -1347,7 +1321,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                 className="min-h-[44px] bg-[#6d4c82] hover:bg-[#593c6b] disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer w-full sm:w-auto"
               >
                 <Locate className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} aria-hidden="true" />
-                <span>{isLocating ? 'Obtendo localização...' : 'Usar meu GPS'}</span>
+                <span>{isLocating ? 'Buscando sua região...' : 'Usar minha localização'}</span>
               </button>
             )}
           </div>
@@ -1355,705 +1329,709 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
         {/* Interactive Nearest Support Facility Panel - ONLY in locator mode */}
         {mode === 'locator' && (
-          <div id="nearest-finder-card" className="bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl p-4 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-[#6d4c82] text-white rounded-xl shrink-0">
-                <Locate className="w-4 h-4" aria-hidden="true" />
+          <div id="nearest-finder-card" className="bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl p-4 sm:p-5 space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-[#6d4c82] text-white rounded-xl shrink-0">
+                  <Locate className="w-4 h-4" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-[#261d2e]">
+                    Como encontrar ajuda perto de você
+                  </h3>
+                  <p className="text-xs text-[#5a4e66]">
+                    Use sua localização, escolha uma cidade de SC ou toque em qualquer ponto do mapa.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[#261d2e]">
-                  Escolha como localizar a unidade mais próxima
-                </h3>
-                <p className="text-xs text-[#5a4e66]">
-                  Use seu GPS, selecione uma cidade de SC ou clique diretamente no mapa.
-                </p>
+
+              {userLocation && (
+                <button
+                  type="button"
+                  onClick={handleClearLocation}
+                  className="min-h-[40px] text-xs font-semibold text-[#5a4e66] hover:text-[#7f3347] bg-white hover:bg-[#fbf2f4] border border-[#ddd1ea] px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors self-start sm:self-auto cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5 text-[#8c3d52]" aria-hidden="true" />
+                  <span>{userLocation.source === 'city' ? 'Limpar cidade' : 'Limpar ponto'}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 pt-1">
+              <div className="md:col-span-5 flex items-center gap-1 bg-white p-1 rounded-xl border border-[#ddd1ea] text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNearestTarget('both');
+                    nearestTargetRef.current = 'both';
+                    setCenterTypeFilter('all');
+                    if (userLocation) calculateAndShowNearest(userLocation.lat, userLocation.lng, 'both');
+                  }}
+                  className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg font-semibold transition-colors text-center cursor-pointer ${
+                    nearestTarget === 'both'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#493d54] hover:bg-[#f3eef8]'
+                  }`}
+                >
+                  Ambos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNearestTarget('delegacia');
+                    nearestTargetRef.current = 'delegacia';
+                    setCenterTypeFilter('delegacia');
+                    setActiveNearestTab('delegacia');
+                    if (userLocation) calculateAndShowNearest(userLocation.lat, userLocation.lng, 'delegacia');
+                  }}
+                  className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg font-semibold transition-colors text-center cursor-pointer ${
+                    nearestTarget === 'delegacia'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#493d54] hover:bg-[#f3eef8]'
+                  }`}
+                >
+                  Delegacia
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNearestTarget('hospital');
+                    nearestTargetRef.current = 'hospital';
+                    setCenterTypeFilter('hospital');
+                    setActiveNearestTab('hospital');
+                    if (userLocation) calculateAndShowNearest(userLocation.lat, userLocation.lng, 'hospital');
+                  }}
+                  className={`flex-1 min-h-[38px] py-1.5 px-2 rounded-lg font-semibold transition-colors text-center cursor-pointer ${
+                    nearestTarget === 'hospital'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#493d54] hover:bg-[#f3eef8]'
+                  }`}
+                >
+                  Hospital
+                </button>
+              </div>
+
+              <div className="md:col-span-7 flex flex-wrap sm:flex-nowrap items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-white px-3 min-h-[44px] rounded-xl border border-[#ddd1ea]">
+                  <span className="text-xs text-[#5a4e66] font-medium shrink-0 hidden sm:inline">
+                    Cidade:
+                  </span>
+                  <select
+                    value={userLocation?.source === 'city' ? userLocation.cityName : ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleLocateFromCity(e.target.value, nearestTarget);
+                      }
+                    }}
+                    className="w-full bg-transparent text-xs sm:text-sm text-[#261d2e] font-medium focus:outline-none cursor-pointer"
+                  >
+                    <option value="">Escolha uma cidade de SC...</option>
+                    {SC_CITIES_NAMES.map(city => (
+                      <option key={city} value={city}>{city} (SC)</option>
+                    ))}
+                  </select>
+                </div>
+
+                {userLocation && (
+                  <button
+                    type="button"
+                    onClick={() => handleLocateGPS(nearestTarget)}
+                    disabled={isLocating}
+                    title="Atualizar sua localização"
+                    className="min-h-[44px] bg-white hover:bg-[#faf8fb] text-[#4f3461] border border-[#ddd1ea] py-1.5 px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin text-[#6d4c82]' : 'text-[#6d4c82]'}`} aria-hidden="true" />
+                    <span className="hidden sm:inline">Atualizar</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            {userLocation && (
-              <button
-                onClick={handleClearLocation}
-                className="text-xs font-bold text-slate-600 hover:text-rose-700 bg-white hover:bg-rose-50 border border-slate-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer shadow-xs"
-              >
-                <X className="w-3.5 h-3.5 text-rose-500" />
-                <span>{userLocation.source === 'city' ? 'Limpar Busca por Cidade' : 'Limpar Localização'}</span>
-              </button>
+            {locateError ? (
+              <div className="bg-white border border-[#ddd1ea] text-[#493d54] p-3.5 rounded-xl text-xs space-y-2">
+                <p className="font-medium text-[#261d2e]">{locateError}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLocateFromCity('Florianópolis', nearestTarget)}
+                    className="text-xs font-semibold text-[#6d4c82] underline hover:text-[#261d2e] cursor-pointer"
+                  >
+                    Ver em Florianópolis
+                  </button>
+                  <span>·</span>
+                  <button
+                    type="button"
+                    onClick={() => handleLocateFromCity('Joinville', nearestTarget)}
+                    className="text-xs font-semibold text-[#6d4c82] underline hover:text-[#261d2e] cursor-pointer"
+                  >
+                    Ver em Joinville
+                  </button>
+                  <span>·</span>
+                  <button
+                    type="button"
+                    onClick={() => handleLocateFromCity('Blumenau', nearestTarget)}
+                    className="text-xs font-semibold text-[#6d4c82] underline hover:text-[#261d2e] cursor-pointer"
+                  >
+                    Ver em Blumenau
+                  </button>
+                </div>
+              </div>
+            ) : !userLocation ? (
+              <div className="text-xs text-[#5a4e66] flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-[#6d4c82] shrink-0" aria-hidden="true" />
+                <span>Você também pode tocar em qualquer ponto do mapa para ver o que fica mais perto dali.</span>
+              </div>
+            ) : null}
+
+            {userLocation && nearestResult && (
+              <div className="bg-white rounded-xl border border-[#ddd1ea] p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#efe9f4] pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#6d4c82]" />
+                    <span className="text-xs font-semibold text-[#261d2e]">
+                      {userLocation.cityName ? `Cidade escolhida: ${userLocation.cityName} (SC)` : userLocation.source === 'gps' ? 'Sua região atual' : 'Ponto marcado no mapa'}
+                    </span>
+                  </div>
+
+                  {nearestTarget === 'both' ? (
+                    <div className="flex items-center gap-1 bg-[#faf8fb] border border-[#efe9f4] p-1 rounded-lg text-xs">
+                      {nearestResult.delegacia && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveNearestTab('delegacia');
+                            setSelectedCenter(nearestResult.delegacia!.center);
+                            if (mapInstanceRef.current) {
+                              mapInstanceRef.current.setView([nearestResult.delegacia!.center.lat, nearestResult.delegacia!.center.lng], 15);
+                            }
+                          }}
+                          className={`min-h-[34px] px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                            activeNearestTab === 'delegacia'
+                              ? 'bg-[#6d4c82] text-white'
+                              : 'text-[#493d54] hover:text-[#261d2e]'
+                          }`}
+                        >
+                          <span>Delegacia</span>
+                          <span className="text-[11px] opacity-90">
+                            {userLocation.source === 'city' && nearestResult.delegacia.center.city === userLocation.cityName
+                              ? '(na cidade)'
+                              : `(${formatDistance(nearestResult.delegacia.distanceKm)})`}
+                          </span>
+                        </button>
+                      )}
+
+                      {nearestResult.hospital && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveNearestTab('hospital');
+                            setSelectedCenter(nearestResult.hospital!.center);
+                            if (mapInstanceRef.current) {
+                              mapInstanceRef.current.setView([nearestResult.hospital!.center.lat, nearestResult.hospital!.center.lng], 15);
+                            }
+                          }}
+                          className={`min-h-[34px] px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                            activeNearestTab === 'hospital'
+                              ? 'bg-[#6d4c82] text-white'
+                              : 'text-[#493d54] hover:text-[#261d2e]'
+                          }`}
+                        >
+                          <span>Hospital</span>
+                          <span className="text-[11px] opacity-90">
+                            {userLocation.source === 'city' && nearestResult.hospital.center.city === userLocation.cityName
+                              ? '(na cidade)'
+                              : `(${formatDistance(nearestResult.hospital.distanceKm)})`}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#f3eef8] text-[#4f3461] border border-[#ddd1ea]">
+                      {nearestTarget === 'hospital' ? 'Mostrando hospitais' : 'Mostrando delegacias da mulher'}
+                    </span>
+                  )}
+                </div>
+
+                {(() => {
+                  const targetKey = nearestTarget === 'hospital'
+                    ? 'hospital'
+                    : nearestTarget === 'delegacia'
+                      ? 'delegacia'
+                      : activeNearestTab;
+                  const item = targetKey === 'hospital' ? nearestResult.hospital : nearestResult.delegacia;
+                  if (!item) return null;
+                  const center = item.center;
+                  const isDeam = center.type === 'delegacia';
+
+                  return (
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#faf8fb] p-3.5 rounded-xl border border-[#efe9f4]">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg border ${
+                            isDeam 
+                              ? 'bg-[#f3eef8] text-[#4f3461] border-[#ddd1ea]' 
+                              : 'bg-[#fbf2f4] text-[#7f3347] border-[#ead4dc]'
+                          }`}>
+                            {isDeam ? 'DPCAMI / DEAM · Delegacia que atende mulheres' : 'Hospital 24h (SC)'}
+                          </span>
+                          {userLocation.source === 'city' ? (
+                            <span className="text-xs font-medium text-[#4f3461] bg-white border border-[#e6dfee] px-2 py-0.5 rounded-lg">
+                              {center.city.toLowerCase() === userLocation.cityName?.toLowerCase()
+                                ? `Em ${center.city}`
+                                : `Mais próxima: ${center.city} (${formatDistance(item.distanceKm)})`}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-[#26543b] bg-[#f1f6f3] border border-[#cde0d4] px-2 py-0.5 rounded-lg tabular-nums">
+                              A {formatDistance(item.distanceKm)}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-sm font-semibold text-[#261d2e] font-heading">
+                          {center.name}
+                        </h4>
+                        <p className="text-xs text-[#5a4e66] flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#6d4c82] shrink-0" aria-hidden="true" />
+                          <span>{center.address}, {center.city} (SC)</span>
+                        </p>
+                        {userLocation.source !== 'city' ? (
+                          <div className="flex items-center gap-3 text-xs text-[#5a4e66] pt-0.5">
+                            <span className="flex items-center gap-1">
+                              <Footprints className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
+                              <span>A pé: <strong className="text-[#261d2e]">~{item.walkingTimeMin} min</strong></span>
+                            </span>
+                            <span>·</span>
+                            <span className="flex items-center gap-1">
+                              <Car className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
+                              <span>De carro: <strong className="text-[#261d2e]">~{item.drivingTimeMin} min</strong></span>
+                            </span>
+                            <span>·</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
+                              <span>{center.hours}</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 text-xs text-[#5a4e66] pt-0.5">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-[#6d4c82]" aria-hidden="true" />
+                              <span>Horário: <strong className="text-[#261d2e]">{center.hours}</strong></span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
+                        <a
+                          href={`tel:${(() => {
+                            const parts = center.phone.split('/');
+                            const dddPart = parts.find((p) => /\(\d{2}\)/.test(p)) || parts[0] || '';
+                            return dddPart.replace(/[^0-9]/g, '');
+                          })()}`}
+                          className="min-h-[44px] bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Phone className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Ligar ({center.phone})</span>
+                        </a>
+
+                        <a
+                          href={userLocation.source === 'city'
+                            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.name + ', ' + center.address + ', ' + center.city + ' - SC')}`
+                            : `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${center.lat},${center.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-h-[44px] bg-[#f3eef8] hover:bg-[#eae1f3] border border-[#ddd1ea] text-[#4f3461] font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Navigation className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Como chegar</span>
+                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCenter(center);
+                            setSelectedReport(null);
+                            if (mapInstanceRef.current) {
+                              mapInstanceRef.current.setView([center.lat, center.lng], 16);
+                            }
+                          }}
+                          className="min-h-[44px] bg-white hover:bg-[#faf8fb] text-[#493d54] border border-[#e6dfee] font-semibold px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer"
+                        >
+                          Ver detalhes
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             )}
           </div>
+        )}
 
-          {/* Control triggers: Target selector & Location input methods */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 pt-1">
-            {/* Target Selection: Delegacia, Hospital, or Both */}
-            <div className="md:col-span-5 flex items-center gap-1 bg-white p-1 rounded-xl border border-purple-200 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  setNearestTarget('both');
-                  nearestTargetRef.current = 'both';
-                  setCenterTypeFilter('all');
-                  if (userLocation) calculateAndShowNearest(userLocation.lat, userLocation.lng, 'both');
-                }}
-                className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center cursor-pointer ${
-                  nearestTarget === 'both'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                ⚡ Ambos
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setNearestTarget('delegacia');
-                  nearestTargetRef.current = 'delegacia';
-                  setCenterTypeFilter('delegacia');
-                  setActiveNearestTab('delegacia');
-                  if (userLocation) calculateAndShowNearest(userLocation.lat, userLocation.lng, 'delegacia');
-                }}
-                className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center cursor-pointer ${
-                  nearestTarget === 'delegacia'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                🚓 Delegacia
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setNearestTarget('hospital');
-                  nearestTargetRef.current = 'hospital';
-                  setCenterTypeFilter('hospital');
-                  setActiveNearestTab('hospital');
-                  if (userLocation) calculateAndShowNearest(userLocation.lat, userLocation.lng, 'hospital');
-                }}
-                className={`flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center cursor-pointer ${
-                  nearestTarget === 'hospital'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                ✚ Hospital
-              </button>
+        {/* Primary Interactive Filters: Risk Level & Delegacia da Mulher (ONLY in heatmap mode) */}
+        {mode === 'heatmap' && (
+          <div className="pt-4 border-t border-[#efe9f4] space-y-3.5">
+            {/* Row 1: Calm Risk Selection Chips */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 bg-[#faf8fb] p-3 rounded-xl border border-[#efe9f4]">
+              <span className="text-xs sm:text-sm font-semibold text-[#261d2e] shrink-0">
+                O que você quer ver no mapa?
+              </span>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRiskFilter('all')}
+                  className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                    riskFilter === 'all'
+                      ? 'bg-[#6d4c82] text-white border-[#6d4c82]'
+                      : 'bg-white text-[#493d54] hover:bg-[#f3eef8] border-[#e6dfee]'
+                  }`}
+                >
+                  Todos os relatos
+                </button>
+
+                {/* Grave — soft burnt rose */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setRiskFilter('grave')}
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                      riskFilter === 'grave'
+                        ? 'bg-[#b05c72] text-white border-[#b05c72]'
+                        : 'bg-[#fbf2f4] text-[#7f3347] hover:bg-[#f5e4e9] border-[#ead4dc]'
+                    }`}
+                    title="Situações com contato físico, ameaça direta ou perseguição"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${riskFilter === 'grave' ? 'bg-white' : 'bg-[#b05c72]'}`} />
+                    <span>Grave</span>
+                    <HelpCircle className="w-3.5 h-3.5 opacity-75" aria-hidden="true" />
+                  </button>
+
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex flex-col items-center z-50 pointer-events-none w-60 text-center">
+                    <div className="bg-white text-[#261d2e] text-xs rounded-xl p-3 shadow-md border border-[#ddd1ea] leading-relaxed">
+                      <strong className="text-[#7f3347] block mb-0.5 font-semibold">Nível grave</strong>
+                      Situações com contato físico, ameaça direta ou perseguição insistente.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Médio — soft warm sand/ochre */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setRiskFilter('medio')}
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                      riskFilter === 'medio' || riskFilter === 'moderado'
+                        ? 'bg-[#9a6b4c] text-white border-[#9a6b4c]'
+                        : 'bg-[#faf5ee] text-[#6b4f2d] hover:bg-[#f3eadc] border-[#e8dcc8]'
+                    }`}
+                    title="Constrangimento repetido ou assédio verbal frequente"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${riskFilter === 'medio' || riskFilter === 'moderado' ? 'bg-white' : 'bg-[#9a6b4c]'}`} />
+                    <span>Médio</span>
+                    <HelpCircle className="w-3.5 h-3.5 opacity-75" aria-hidden="true" />
+                  </button>
+
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex flex-col items-center z-50 pointer-events-none w-60 text-center">
+                    <div className="bg-white text-[#261d2e] text-xs rounded-xl p-3 shadow-md border border-[#ddd1ea] leading-relaxed">
+                      <strong className="text-[#6b4f2d] block mb-0.5 font-semibold">Nível médio</strong>
+                      Constrangimento ou assédio com palavras que se repete no trabalho, estudo ou trajeto.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Baixo — soft plum/lavender */}
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setRiskFilter('baixo')}
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                      riskFilter === 'baixo' || riskFilter === 'leve'
+                        ? 'bg-[#6d4c82] text-white border-[#6d4c82]'
+                        : 'bg-[#f3eef8] text-[#4f3461] hover:bg-[#eae1f3] border-[#ddd1ea]'
+                    }`}
+                    title="Comentário ou abordagem pontual que causou desconforto"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${riskFilter === 'baixo' || riskFilter === 'leve' ? 'bg-white' : 'bg-[#6d4c82]'}`} />
+                    <span>Baixo</span>
+                    <HelpCircle className="w-3.5 h-3.5 opacity-75" aria-hidden="true" />
+                  </button>
+
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex flex-col items-center z-50 pointer-events-none w-60 text-center">
+                    <div className="bg-white text-[#261d2e] text-xs rounded-xl p-3 shadow-md border border-[#ddd1ea] leading-relaxed">
+                      <strong className="text-[#4f3461] block mb-0.5 font-semibold">Nível baixo</strong>
+                      Abordagem ou comentário isolado que causou desconforto.
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Location triggers: City Selector & Refresh */}
-            <div className="md:col-span-7 flex flex-wrap sm:flex-nowrap items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-purple-200">
-                <span className="text-[11px] text-slate-500 font-bold shrink-0 hidden sm:inline">
-                  Ou escolher cidade:
-                </span>
+            {/* Row 2: Support Places Focus & Visibility */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5">
+              <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2 bg-[#f3eef8]/70 border border-[#e6dfee] rounded-xl px-3.5 py-2 text-xs">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-[#6d4c82] shrink-0" aria-hidden="true" />
+                  <label htmlFor="heatmap-support-select" className="font-semibold text-[#261d2e]">
+                    Ver um lugar de ajuda:
+                  </label>
+                </div>
                 <select
-                  value={userLocation?.source === 'city' ? userLocation.cityName : ''}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleLocateFromCity(e.target.value, nearestTarget);
+                  id="heatmap-support-select"
+                  value={selectedDeamId}
+                  onChange={(e) => handleSelectDeam(e.target.value)}
+                  className="w-full min-h-[38px] bg-white border border-[#ddd1ea] rounded-lg px-2.5 py-1 text-xs text-[#261d2e] font-medium focus:outline-none cursor-pointer"
+                >
+                  <option value="all">Escolha uma delegacia da mulher ou um hospital</option>
+                  <optgroup label="DPCAMI / DEAM — Delegacias que atendem mulheres">
+                    {delegacias.map(deam => (
+                      <option key={deam.id} value={deam.id}>
+                        {deam.name} - {deam.city} ({deam.state})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Hospitais 24h de Santa Catarina">
+                    {hospitais.map(hosp => (
+                      <option key={hosp.id} value={hosp.id}>
+                        {hosp.name} - {hosp.city} ({hosp.state})
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1 bg-[#faf8fb] border border-[#e6dfee] rounded-xl p-1 text-xs shrink-0 flex-wrap sm:flex-nowrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCenterTypeFilter('all');
+                    setNearestTarget('both');
+                    nearestTargetRef.current = 'both';
+                  }}
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer ${
+                    centerTypeFilter === 'all'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#493d54] hover:bg-[#f3eef8]'
+                  }`}
+                >
+                  Todas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCenterTypeFilter('delegacia');
+                    setNearestTarget('delegacia');
+                    nearestTargetRef.current = 'delegacia';
+                    setActiveNearestTab('delegacia');
+                    if (selectedCenter && selectedCenter.type !== 'delegacia') {
+                      setSelectedCenter(null);
                     }
                   }}
-                  className="w-full bg-transparent text-xs text-slate-800 font-bold focus:outline-none cursor-pointer"
+                  title="DPCAMI / DEAM — Delegacias que atendem mulheres"
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
+                    centerTypeFilter === 'delegacia'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#493d54] hover:bg-[#f3eef8]'
+                  }`}
                 >
-                  <option value="">Selecione um município de SC (295 municípios)...</option>
+                  <span>DPCAMI / DEAM</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCenterTypeFilter('hospital');
+                    setNearestTarget('hospital');
+                    nearestTargetRef.current = 'hospital';
+                    setActiveNearestTab('hospital');
+                    if (selectedCenter && selectedCenter.type !== 'hospital') {
+                      setSelectedCenter(null);
+                    }
+                  }}
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
+                    centerTypeFilter === 'hospital'
+                      ? 'bg-[#6d4c82] text-white'
+                      : 'text-[#493d54] hover:bg-[#f3eef8]'
+                  }`}
+                >
+                  <span>Hospitais</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCenterTypeFilter('none');
+                    setSelectedCenter(null);
+                  }}
+                  className={`min-h-[36px] px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    centerTypeFilter === 'none'
+                      ? 'bg-[#e6dfee] text-[#261d2e] font-semibold'
+                      : 'text-[#5a4e66] hover:text-[#261d2e]'
+                  }`}
+                >
+                  Ocultar
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#5a4e66] px-0.5">
+              <strong className="font-semibold text-[#4f3461]">DPCAMI / DEAM:</strong> delegacias da Polícia Civil especializadas que atendem mulheres em SC.
+            </p>
+
+            {/* Row 3: Secondary Filters Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-0.5">
+              <div>
+                <label htmlFor="heatmap-city-filter" className="block text-[#261d2e] font-semibold mb-1">
+                  Cidade
+                </label>
+                <select
+                  id="heatmap-city-filter"
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="w-full min-h-[44px] bg-[#faf8fb] border border-[#e6dfee] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#261d2e] font-medium focus:outline-none"
+                >
+                  <option value="all">Todas as cidades de SC</option>
                   {SC_CITIES_NAMES.map(city => (
                     <option key={city} value={city}>{city} (SC)</option>
                   ))}
                 </select>
               </div>
 
-              {/* Botão sutil para re-sincronizar GPS se desejado */}
-              {userLocation && (
-                <button
-                  type="button"
-                  onClick={() => handleLocateGPS(nearestTarget)}
-                  disabled={isLocating}
-                  title="Atualizar posição atual pelo GPS"
-                  className="bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
+              <div>
+                <label htmlFor="heatmap-category-filter" className="block text-[#261d2e] font-semibold mb-1">
+                  O que aconteceu
+                </label>
+                <select
+                  id="heatmap-category-filter"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full min-h-[44px] bg-[#faf8fb] border border-[#e6dfee] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#261d2e] font-medium focus:outline-none"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin text-purple-600' : 'text-purple-700'}`} />
-                  <span className="hidden sm:inline">Atualizar GPS</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Geolocation warning or instruction */}
-          {locateError ? (
-            <div className="bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl text-xs flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-medium">{locateError}</p>
-                <div className="flex items-center gap-2 pt-0.5">
-                  <button
-                    onClick={() => handleLocateFromCity('Florianópolis', nearestTarget)}
-                    className="text-[11px] font-bold text-amber-950 underline hover:text-black cursor-pointer"
-                  >
-                    Usar Florianópolis
-                  </button>
-                  <span>•</span>
-                  <button
-                    onClick={() => handleLocateFromCity('Joinville', nearestTarget)}
-                    className="text-[11px] font-bold text-amber-950 underline hover:text-black cursor-pointer"
-                  >
-                    Usar Joinville
-                  </button>
-                  <span>•</span>
-                  <button
-                    onClick={() => handleLocateFromCity('Blumenau', nearestTarget)}
-                    className="text-[11px] font-bold text-amber-950 underline hover:text-black cursor-pointer"
-                  >
-                    Usar Blumenau
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : !userLocation ? (
-            <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-              <Compass className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-              <span>Dica: Você também pode clicar diretamente em qualquer ponto do mapa para definir sua posição exata.</span>
-            </div>
-          ) : null}
-
-          {/* Nearest Results Summary Card when user location is set */}
-          {userLocation && nearestResult && (
-            <div className="bg-white rounded-xl border border-purple-200 p-3.5 shadow-xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${userLocation.source === 'city' ? 'bg-[#6d4c82]' : 'bg-emerald-600'}`} />
-                  <span className="text-xs font-extrabold text-slate-900">
-                    {userLocation.cityName ? `Cidade de Referência: ${userLocation.cityName} (SC)` : userLocation.source === 'gps' ? 'Sua Localização GPS Ativa' : 'Ponto Marcado no Mapa'}
-                  </span>
-                  {userLocation.source !== 'city' && (
-                    <span className="text-[10px] text-slate-500">
-                      ({userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)})
-                    </span>
-                  )}
-                </div>
-
-                {/* Tab switcher for Nearest delegacia vs Nearest hospital */}
-                {nearestTarget === 'both' ? (
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs">
-                    {nearestResult.delegacia && (
-                      <button
-                        onClick={() => {
-                          setActiveNearestTab('delegacia');
-                          setSelectedCenter(nearestResult.delegacia!.center);
-                          if (mapInstanceRef.current) {
-                            mapInstanceRef.current.setView([nearestResult.delegacia!.center.lat, nearestResult.delegacia!.center.lng], 15);
-                          }
-                        }}
-                        className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                          activeNearestTab === 'delegacia'
-                            ? 'bg-purple-600 text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        <span>🚓 Delegacia</span>
-                        <span className="text-[10px] opacity-90">
-                          {userLocation.source === 'city' && nearestResult.delegacia.center.city === userLocation.cityName
-                            ? '(Na cidade)'
-                            : `(${formatDistance(nearestResult.delegacia.distanceKm)})`}
-                        </span>
-                      </button>
-                    )}
-
-                    {nearestResult.hospital && (
-                      <button
-                        onClick={() => {
-                          setActiveNearestTab('hospital');
-                          setSelectedCenter(nearestResult.hospital!.center);
-                          if (mapInstanceRef.current) {
-                            mapInstanceRef.current.setView([nearestResult.hospital!.center.lat, nearestResult.hospital!.center.lng], 15);
-                          }
-                        }}
-                        className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                          activeNearestTab === 'hospital'
-                            ? 'bg-rose-600 text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        <span>✚ Hospital</span>
-                        <span className="text-[10px] opacity-90">
-                          {userLocation.source === 'city' && nearestResult.hospital.center.city === userLocation.cityName
-                            ? '(Na cidade)'
-                            : `(${formatDistance(nearestResult.hospital.distanceKm)})`}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-lg border ${
-                    nearestTarget === 'hospital'
-                      ? 'bg-rose-100 text-rose-900 border-rose-300'
-                      : 'bg-purple-100 text-purple-900 border-purple-300'
-                  }`}>
-                    {nearestTarget === 'hospital' ? '✚ Apenas Hospital Filtrado' : '🚓 Apenas Delegacia Filtrada'}
-                  </span>
-                )}
+                  <option value="all">Todos os tipos</option>
+                  <option value="importunacao_sexual">Importunação sexual</option>
+                  <option value="assedio_sexual">Assédio sexual</option>
+                  <option value="assedio_moral">Assédio moral</option>
+                  <option value="perseguicao">Perseguição (stalking)</option>
+                  <option value="violencia_psicologica">Violência emocional</option>
+                  <option value="violencia_virtual">Violência na internet</option>
+                </select>
               </div>
 
-              {/* Active Tab Result Item */}
-              {(() => {
-                const targetKey = nearestTarget === 'hospital'
-                  ? 'hospital'
-                  : nearestTarget === 'delegacia'
-                    ? 'delegacia'
-                    : activeNearestTab;
-                const item = targetKey === 'hospital' ? nearestResult.hospital : nearestResult.delegacia;
-                if (!item) return null;
-                const center = item.center;
-                const isDeam = center.type === 'delegacia';
-
-                return (
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded border ${
-                          isDeam 
-                            ? 'bg-purple-100 text-purple-900 border-purple-300' 
-                            : 'bg-rose-100 text-rose-900 border-rose-300'
-                        }`}>
-                          {isDeam ? '🚓 Delegacia da Mulher (DPCAMI / DEAM)' : '✚ Hospital de Urgência (SC)'}
-                        </span>
-                        {userLocation.source === 'city' ? (
-                          <span className="text-xs font-black text-purple-900 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded">
-                            {center.city.toLowerCase() === userLocation.cityName?.toLowerCase()
-                              ? `Localizada em ${center.city}`
-                              : `Unidade de referência: ${center.city} (${formatDistance(item.distanceKm)})`}
-                          </span>
-                        ) : (
-                          <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded">
-                            Apenas {formatDistance(item.distanceKm)}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-900 font-heading">
-                        {center.name}
-                      </h4>
-                      <p className="text-xs text-slate-600 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{center.address}, {center.city} (SC)</span>
-                      </p>
-                      {userLocation.source !== 'city' ? (
-                        <div className="flex items-center gap-3 text-[11px] text-slate-600 pt-0.5">
-                          <span className="flex items-center gap-1">
-                            <Footprints className="w-3 h-3 text-purple-600" />
-                            <span>A pé: <strong>~{item.walkingTimeMin} min</strong></span>
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Car className="w-3 h-3 text-purple-600" />
-                            <span>De carro: <strong>~{item.drivingTimeMin} min</strong></span>
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-500" />
-                            <span>{center.hours}</span>
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3 text-[11px] text-slate-600 pt-0.5">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-purple-600" />
-                            <span>Atendimento: <strong>{center.hours}</strong></span>
-                          </span>
-                          <span>•</span>
-                          <span className="text-slate-500">
-                            Cidade selecionada: <strong className="text-slate-800">{userLocation.cityName}</strong>
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
-                      <a
-                        href={`tel:${(() => {
-                          const parts = center.phone.split('/');
-                          const dddPart = parts.find((p) => /\(\d{2}\)/.test(p)) || parts[0] || '';
-                          return dddPart.replace(/[^0-9]/g, '');
-                        })()}`}
-                        className="min-h-[44px] bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Phone className="w-3.5 h-3.5" aria-hidden="true" />
-                        <span>Ligar ({center.phone})</span>
-                      </a>
-
-                      <a
-                        href={userLocation.source === 'city'
-                          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.name + ', ' + center.address + ', ' + center.city + ' - SC')}`
-                          : `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${center.lat},${center.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                      >
-                        <Navigation className="w-3.5 h-3.5" />
-                        <span>Ver no Maps</span>
-                        <ExternalLink className="w-3 h-3 text-purple-200" />
-                      </a>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCenter(center);
-                          setSelectedReport(null);
-                          if (mapInstanceRef.current) {
-                            mapInstanceRef.current.setView([center.lat, center.lng], 16);
-                          }
-                        }}
-                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer"
-                      >
-                        Ver Ficha
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-        )}
-
-        {/* Primary Interactive Filters: Risk Level & Delegacia da Mulher (ONLY in heatmap mode) */}
-        {mode === 'heatmap' && (
-          <div className="pt-3 border-t border-slate-200 space-y-3">
-          {/* Row 1: Interactive Risk Selection Buttons */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 shrink-0">
-              <AlertTriangle className="w-4 h-4 text-purple-600" />
-              <span>Selecione o nível de gravidade da ocorrência:</span>
-            </span>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setRiskFilter('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  riskFilter === 'all'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
-                }`}
-              >
-                Todos Níveis
-              </button>
-
-              {/* Grave */}
-              <div className="relative group">
-                <button
-                  type="button"
-                  onClick={() => setRiskFilter('grave')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    riskFilter === 'grave'
-                      ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-400'
-                      : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-                  }`}
-                  title="Envolve violência física, ameaça direta, coerção ou reincidência insistente (ex: stalking ou chantagem)"
+              <div>
+                <label htmlFor="heatmap-period-filter" className="block text-[#261d2e] font-semibold mb-1">
+                  Horário
+                </label>
+                <select
+                  id="heatmap-period-filter"
+                  value={periodFilter}
+                  onChange={(e) => setPeriodFilter(e.target.value)}
+                  className="w-full min-h-[44px] bg-[#faf8fb] border border-[#e6dfee] rounded-xl px-3 py-2 text-xs sm:text-sm text-[#261d2e] font-medium focus:outline-none"
                 >
-                  <span className="w-2 h-2 rounded-full bg-rose-600" />
-                  <span>Grave</span>
-                  <HelpCircle className="w-3.5 h-3.5 text-rose-500 group-hover:text-rose-700 opacity-80" />
-                </button>
-
-                {/* Balão de Dica (Tooltip Flutuante) */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex flex-col items-center z-50 pointer-events-none w-64 text-center animate-in fade-in zoom-in-95 duration-150">
-                  <div className="bg-slate-900/95 backdrop-blur-sm text-white text-[11px] rounded-xl p-2.5 shadow-2xl border border-slate-700 leading-snug">
-                    <strong className="text-rose-400 block mb-1 font-bold">🔴 Nível Grave:</strong>
-                    Envolve violência física, ameaça direta, coerção ou reincidência insistente (ex: stalking ou chantagem).
-                  </div>
-                  <div className="w-2.5 h-2.5 bg-slate-900 border-b border-r border-slate-700 rotate-45 -mt-1.5" />
-                </div>
-              </div>
-
-              {/* Médio */}
-              <div className="relative group">
-                <button
-                  type="button"
-                  onClick={() => setRiskFilter('medio')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    riskFilter === 'medio' || riskFilter === 'moderado'
-                      ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-400'
-                      : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
-                  }`}
-                  title="Envolve assédio verbal recorrente, constrangimento no ambiente de trabalho/estudo ou condutas inapropiadas repetidas"
-                >
-                  <span>🟡 Médio</span>
-                  <HelpCircle className="w-3.5 h-3.5 text-amber-600 group-hover:text-amber-800 opacity-80" />
-                </button>
-
-                {/* Balão de Dica (Tooltip Flutuante) */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex flex-col items-center z-50 pointer-events-none w-64 text-center animate-in fade-in zoom-in-95 duration-150">
-                  <div className="bg-slate-900/95 backdrop-blur-sm text-white text-[11px] rounded-xl p-2.5 shadow-2xl border border-slate-700 leading-snug">
-                    <strong className="text-amber-400 block mb-1 font-bold">🟡 Nível Médio:</strong>
-                    Envolve assédio verbal recorrente, constrangimento no ambiente de trabalho/estudo ou condutas inapropiadas repetidas.
-                  </div>
-                  <div className="w-2.5 h-2.5 bg-slate-900 border-b border-r border-slate-700 rotate-45 -mt-1.5" />
-                </div>
-              </div>
-
-              {/* Baixo */}
-              <div className="relative group">
-                <button
-                  type="button"
-                  onClick={() => setRiskFilter('baixo')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    riskFilter === 'baixo' || riskFilter === 'leve'
-                      ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-400'
-                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                  }`}
-                  title="Relatos de comentários isolados ou situações de desconforto único, onde a orientação preventiva ou escuta é suficiente."
-                >
-                  <span>🔵 Baixo</span>
-                  <HelpCircle className="w-3.5 h-3.5 text-blue-500 group-hover:text-blue-700 opacity-80" />
-                </button>
-
-                {/* Balão de Dica (Tooltip Flutuante) */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex group-focus-within:flex flex-col items-center z-50 pointer-events-none w-64 text-center animate-in fade-in zoom-in-95 duration-150">
-                  <div className="bg-slate-900/95 backdrop-blur-sm text-white text-[11px] rounded-xl p-2.5 shadow-2xl border border-slate-700 leading-snug">
-                    <strong className="text-blue-400 block mb-1 font-bold">🔵 Nível Baixo:</strong>
-                    Relatos de comentários isolados ou situações de desconforto único, onde a orientação preventiva ou escuta é suficiente.
-                  </div>
-                  <div className="w-2.5 h-2.5 bg-slate-900 border-b border-r border-slate-700 rotate-45 -mt-1.5" />
-                </div>
+                  <option value="all">Qualquer horário</option>
+                  <option value="manha">Manhã (6h às 12h)</option>
+                  <option value="tarde">Tarde (12h às 18h)</option>
+                  <option value="noite">Noite (18h às 0h)</option>
+                  <option value="madrugada">Madrugada (0h às 6h)</option>
+                </select>
               </div>
             </div>
           </div>
-
-          {/* Row 2: Delegacia da Mulher Direct Selection Dropdown & Support Center Visibility */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            <div className="flex-1 flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-xl px-3 py-2 text-xs">
-              <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
-              <span className="font-bold text-purple-900 shrink-0">Centralizar Unidade:</span>
-              <select
-                value={selectedDeamId}
-                onChange={(e) => handleSelectDeam(e.target.value)}
-                className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1 text-xs text-purple-950 font-bold focus:outline-none focus:border-purple-500 cursor-pointer shadow-xs"
-              >
-                <option value="all">Selecione uma DPCAMI / DEAM ou Hospital para focar...</option>
-                <optgroup label="🚓 Delegacias da Mulher (DPCAMI / DEAM)">
-                  {delegacias.map(deam => (
-                    <option key={deam.id} value={deam.id}>
-                      {deam.name} - {deam.city} ({deam.state})
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="✚ Hospitais de Santa Catarina">
-                  {hospitais.map(hosp => (
-                    <option key={hosp.id} value={hosp.id}>
-                      {hosp.name} - {hosp.city} ({hosp.state})
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 text-xs shrink-0 flex-wrap sm:flex-nowrap">
-              <button
-                onClick={() => {
-                  setCenterTypeFilter('all');
-                  setNearestTarget('both');
-                  nearestTargetRef.current = 'both';
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  centerTypeFilter === 'all'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Todas
-              </button>
-              <button
-                onClick={() => {
-                  setCenterTypeFilter('delegacia');
-                  setNearestTarget('delegacia');
-                  nearestTargetRef.current = 'delegacia';
-                  setActiveNearestTab('delegacia');
-                  if (selectedCenter && selectedCenter.type !== 'delegacia') {
-                    setSelectedCenter(null);
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  centerTypeFilter === 'delegacia'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>🚓 DPCAMI / DEAM</span>
-              </button>
-              <button
-                onClick={() => {
-                  setCenterTypeFilter('hospital');
-                  setNearestTarget('hospital');
-                  nearestTargetRef.current = 'hospital';
-                  setActiveNearestTab('hospital');
-                  if (selectedCenter && selectedCenter.type !== 'hospital') {
-                    setSelectedCenter(null);
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  centerTypeFilter === 'hospital'
-                    ? 'bg-rose-600 text-white'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>✚ Hospitais</span>
-              </button>
-              <button
-                onClick={() => {
-                  setCenterTypeFilter('none');
-                  setSelectedCenter(null);
-                }}
-                className={`px-2 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  centerTypeFilter === 'none'
-                    ? 'bg-slate-200 text-slate-800'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                Ocultar
-              </button>
-            </div>
-          </div>
-
-          {/* Row 3: Secondary Filters Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2 text-xs pt-1">
-            <div>
-              <label className="block text-slate-600 font-bold mb-1">Cidade (Santa Catarina)</label>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-purple-500 shadow-xs"
-              >
-                <option value="all">Todas as Cidades (SC) • 295 Municípios</option>
-                {SC_CITIES_NAMES.map(city => (
-                  <option key={city} value={city}>{city} (SC)</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-slate-600 font-bold mb-1">Tipo de Ocorrência</label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-purple-500 shadow-xs"
-              >
-                <option value="all">Todos os Tipos</option>
-                <option value="importunacao_sexual">Importunação Sexual</option>
-                <option value="assedio_sexual">Assédio Sexual</option>
-                <option value="assedio_moral">Assédio Moral</option>
-                <option value="perseguicao">Perseguição (Stalking)</option>
-                <option value="violencia_psicologica">Violência Psicológica</option>
-                <option value="violencia_virtual">Violência Virtual / Nudez</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-slate-600 font-bold mb-1">Período do Dia</label>
-              <select
-                value={periodFilter}
-                onChange={(e) => setPeriodFilter(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-purple-500 shadow-xs"
-              >
-                <option value="all">Qualquer Horário</option>
-                <option value="manha">Manhã (06h - 12h)</option>
-                <option value="tarde">Tarde (12h - 18h)</option>
-                <option value="noite">Noite (18h - 00h)</option>
-                <option value="madrugada">Madrugada (00h - 06h)</option>
-              </select>
-            </div>
-          </div>
-        </div>
         )}
       </div>
 
       {/* Main Map Canvas & Details Split View */}
-      <div className={isMapFullscreen ? '' : 'grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[500px]'}>
+      <div className={isMapFullscreen ? '' : 'grid grid-cols-1 lg:grid-cols-3 gap-5 min-h-[500px]'}>
         {/* OpenStreetMap Container */}
         <div className={
           isMapFullscreen
-            ? 'fixed inset-0 z-[9999] bg-slate-900 w-screen h-screen overflow-hidden'
-            : 'lg:col-span-2 relative bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden shadow-sm min-h-[420px] lg:min-h-[520px]'
+            ? 'fixed inset-0 z-[9999] bg-[#faf8fb] w-screen h-screen overflow-hidden'
+            : 'lg:col-span-2 relative bg-[#f3eef8] rounded-2xl border border-[#e6dfee] overflow-hidden min-h-[420px] lg:min-h-[520px]'
         }>
           <div ref={mapContainerRef} className="absolute inset-0 z-10 h-full w-full" />
 
-          {/* Fullscreen Mode Indicator Badge */}
           {isMapFullscreen && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full border border-slate-700 shadow-xl flex items-center gap-2 text-xs font-semibold pointer-events-none">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Mapa ampliado</span>
-              <span className="text-[10px] text-slate-300 hidden sm:inline">• Pressione ESC ou clique em "Restaurar" para sair</span>
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-white/95 backdrop-blur-md text-[#261d2e] px-4 py-1.5 rounded-full border border-[#ddd1ea] shadow-sm flex items-center gap-2 text-xs font-semibold pointer-events-none">
+              <span className="w-2 h-2 rounded-full bg-[#6d4c82]" />
+              <span>Mapa em tela cheia</span>
+              <span className="text-[11px] text-[#5a4e66] hidden sm:inline">· Clique em "Restaurar" para voltar</span>
             </div>
           )}
 
           {/* Map Legend Floating Overlay */}
-          <div className="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-md p-2.5 rounded-xl border border-slate-200 text-[11px] text-slate-700 space-y-1.5 shadow-md">
-            <span className="font-extrabold text-slate-900 block mb-0.5">Unidades de Apoio</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">🚓</span>
-              <span className="font-bold text-slate-900">Delegacia da Mulher (DPCAMI / DEAM)</span>
+          <div className="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-md p-3 rounded-xl border border-[#e6dfee] text-[11px] text-[#493d54] space-y-1.5 shadow-xs max-w-[235px]">
+            <span className="font-semibold text-[#261d2e] block mb-0.5">Legenda do mapa</span>
+            <div className="flex items-start gap-2">
+              <span className="text-xs leading-none mt-0.5">🚓</span>
+              <div>
+                <span className="font-semibold text-[#261d2e] block leading-tight">DPCAMI / DEAM</span>
+                <span className="text-[10px] text-[#5a4e66] block leading-tight">Delegacias que atendem mulheres</span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-red-600 font-extrabold text-sm">✚</span>
-              <span className="font-bold text-rose-900">Hospital de Urgência (SC)</span>
+              <span className="text-[#b05c72] font-bold text-xs leading-none">✚</span>
+              <span className="font-medium text-[#261d2e]">Hospital 24h (SC)</span>
             </div>
-            <div className="pt-1 border-t border-slate-200 flex items-center gap-2">
-              <span className="w-4 h-4 rounded-full bg-rose-500 text-white font-extrabold text-[10px] flex items-center justify-center border border-white shadow-xs">
+            <div className="pt-1 border-t border-[#efe9f4] flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full bg-[#b05c72] text-white font-semibold text-[10px] flex items-center justify-center border border-white">
                 #
               </span>
-              <span className="font-bold text-slate-800">Qtd. Ocorrências na Bolha</span>
+              <span className="font-medium text-[#493d54]">Relatos na área aproximada</span>
             </div>
             {userLocation && userLocation.source !== 'city' && (
-              <div className="flex items-center gap-2 pt-0.5 text-blue-700 font-bold">
+              <div className="flex items-center gap-2 pt-0.5 text-[#4f3461] font-semibold">
                 <span>📍</span>
-                <span>Sua Localização</span>
+                <span>Onde você marcou</span>
               </div>
             )}
           </div>
 
           {/* Quick GPS, Fullscreen & Map Actions Floating on Canvas */}
           <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5">
-            {/* Toggle Fullscreen Map Button */}
             <button
+              type="button"
               onClick={() => setIsMapFullscreen(prev => !prev)}
-              title={isMapFullscreen ? "Restaurar tamanho normal do mapa (ESC)" : "Ampliar mapa para ocupar toda a tela"}
+              title={isMapFullscreen ? "Voltar ao tamanho normal do mapa" : "Ampliar mapa para tela cheia"}
               className={`${
                 isMapFullscreen
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg ring-2 ring-purple-300'
-                  : 'bg-white/95 hover:bg-white text-slate-800 hover:text-purple-700 border border-slate-200 shadow-md'
-              } p-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer`}
+                  ? 'bg-[#6d4c82] hover:bg-[#593c6b] text-white shadow-md'
+                  : 'bg-white/95 hover:bg-white text-[#261d2e] hover:text-[#4f3461] border border-[#e6dfee] shadow-xs'
+              } min-h-[40px] px-3 py-2 rounded-xl flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer`}
             >
               {isMapFullscreen ? (
                 <>
-                  <Minimize2 className="w-4 h-4 text-white" />
-                  <span className="font-extrabold">Restaurar</span>
+                  <Minimize2 className="w-4 h-4 text-white" aria-hidden="true" />
+                  <span>Restaurar</span>
                 </>
               ) : (
                 <>
-                  <Maximize2 className="w-4 h-4 text-purple-600" />
+                  <Maximize2 className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
                   <span className="hidden sm:inline">Tela Cheia</span>
                 </>
               )}
             </button>
 
             <button
+              type="button"
               onClick={() => handleLocateGPS(nearestTarget)}
               disabled={isLocating}
-              title="Localizar mais próximo da minha localização"
-              className="bg-white/95 hover:bg-white text-slate-800 hover:text-purple-700 p-2.5 rounded-xl border border-slate-200 shadow-md flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
+              title="Encontrar lugares de ajuda perto de você"
+              className="min-h-[40px] bg-white/95 hover:bg-white text-[#261d2e] hover:text-[#4f3461] px-3 py-2 rounded-xl border border-[#e6dfee] shadow-xs flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
             >
-              <Locate className={`w-4 h-4 text-purple-600 ${isLocating ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Meu Local</span>
+              <Locate className={`w-4 h-4 text-[#6d4c82] ${isLocating ? 'animate-spin' : ''}`} aria-hidden="true" />
+              <span className="hidden sm:inline">Perto de mim</span>
             </button>
             {userLocation && (
               <button
+                type="button"
                 onClick={handleClearLocation}
-                title="Limpar localização"
-                className="bg-white/95 hover:bg-rose-50 text-rose-600 p-2 rounded-xl border border-rose-200 shadow-md flex items-center justify-center text-xs font-bold transition-all cursor-pointer"
+                title="Limpar ponto marcado"
+                className="min-h-[40px] bg-white/95 hover:bg-[#fbf2f4] text-[#7f3347] p-2 rounded-xl border border-[#ead4dc] shadow-xs flex items-center justify-center text-xs font-semibold transition-colors cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
           </div>
 
-          {/* Floating Inspector in Fullscreen Mode */}
           {isMapFullscreen && (selectedCenter || selectedReport) && (
-            <div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:w-[420px] max-h-[75vh] overflow-y-auto z-30 bg-white rounded-2xl shadow-2xl border border-slate-300 p-4 sm:p-5 animate-in slide-in-from-bottom-3">
+            <div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:w-[420px] max-h-[75vh] overflow-y-auto z-30 bg-white rounded-2xl shadow-xl border border-[#ddd1ea] p-4 sm:p-5">
               {renderInspectorContent()}
             </div>
           )}
@@ -2061,7 +2039,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
         {/* Selected Inspector (Standard layout) */}
         {!isMapFullscreen && (
-          <div id="report-inspector-card" className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4 shadow-sm scroll-mt-24">
+          <div id="report-inspector-card" className="bg-white border border-[#e6dfee] rounded-2xl p-5 flex flex-col justify-between space-y-4 scroll-mt-24">
             {renderInspectorContent()}
           </div>
         )}
@@ -2069,4 +2047,3 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
     </div>
   );
 };
-

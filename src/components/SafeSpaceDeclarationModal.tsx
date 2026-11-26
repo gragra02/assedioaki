@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShieldAlert, Heart, CheckCircle2, Lock, EyeOff, Sparkles, UserCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldAlert, CheckCircle2, Lock, EyeOff, UserCheck } from 'lucide-react';
 import appLogo from '../assets/logo.jpg';
 
 interface SafeSpaceDeclarationModalProps {
@@ -10,90 +10,96 @@ interface SafeSpaceDeclarationModalProps {
 export const SafeSpaceDeclarationModal: React.FC<SafeSpaceDeclarationModalProps> = ({ isOpen, onAccept }) => {
   const [agreed, setAgreed] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setAgreed(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/95 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-slate-900 border border-purple-500/30 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl shadow-purple-950/50 space-y-6 relative overflow-hidden">
-        {/* Glow ambient accent */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-600/20 rounded-full blur-3xl pointer-events-none" />
-
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="safespace-modal-title"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#261d2e]/55 backdrop-blur-sm overflow-y-auto"
+    >
+      <div className="bg-white border border-[#e6dfee] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-xl space-y-5 relative my-auto">
         {/* Header Icon & Title */}
         <div className="flex items-center gap-3">
-          <div className="w-13 h-13 rounded-full bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800 p-0.5 shadow-lg shadow-purple-900/50 flex items-center justify-center overflow-hidden shrink-0">
-            <img 
-              src={appLogo} 
-              alt="Logo Sistema AssédioAki" 
-              className="w-full h-full object-cover rounded-full bg-white"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+          <img 
+            src={appLogo} 
+            alt="Logo Assédio Aki" 
+            className="w-12 h-12 rounded-full object-cover border border-[#e6dfee] shrink-0"
+            referrerPolicy="no-referrer"
+          />
           <div>
-            <span className="text-xs uppercase font-bold tracking-widest text-purple-400">Plataforma Acolhedora</span>
-            <h2 className="text-xl font-bold text-white font-heading">Bem-vinda ao Sistema AssédioAki</h2>
+            <span className="text-xs font-semibold text-[#6d4c82]">Um lugar de cuidado</span>
+            <h2 id="safespace-modal-title" className="text-xl font-semibold text-[#261d2e] font-heading">Que bom ter você aqui</h2>
           </div>
         </div>
 
-        {/* Declaration Box required by prompt */}
-        <div className="bg-gradient-to-r from-purple-950/60 to-pink-950/40 p-4 sm:p-5 rounded-xl border border-purple-500/40 space-y-2 text-slate-200">
+        {/* Declaration Box */}
+        <div className="bg-[#f3eef8] p-4 sm:p-5 rounded-2xl border border-[#ddd1ea] text-[#261d2e]">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-pink-400 shrink-0 mt-0.5" />
-            <p className="text-sm sm:text-base font-semibold leading-relaxed text-purple-100">
-              "Esta plataforma é um espaço seguro voltado ao acolhimento de mulheres e vítimas de violência de gênero."
+            <ShieldAlert className="w-5 h-5 text-[#6d4c82] shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-sm sm:text-base font-medium leading-relaxed text-[#261d2e]">
+              Este é um espaço seguro de acolhimento, escuta e orientação para mulheres e pessoas que vivem violência de gênero. Você não está sozinha.
             </p>
           </div>
         </div>
 
         {/* Inclusivity & Guidelines Note */}
-        <div className="space-y-3 text-xs sm:text-sm text-slate-300">
+        <div className="space-y-3 text-xs sm:text-sm text-[#493d54]">
           <div className="flex items-start gap-2.5">
-            <UserCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+            <UserCheck className="w-4 h-4 text-[#6d4c82] shrink-0 mt-1" aria-hidden="true" />
             <p>
-              <strong className="text-purple-300">Público-alvo e escopo:</strong> Espaço dedicado prioritariamente a mulheres cisgênero, mulheres transgênero e pessoas não-binárias com expressão ou vivência do gênero feminino.
+              <strong className="text-[#261d2e]">Para quem é:</strong> mulheres cis, mulheres trans e pessoas não binárias com expressão feminina. Aqui você é respeitada.
             </p>
           </div>
 
           <div className="flex items-start gap-2.5">
-            <Lock className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <Lock className="w-4 h-4 text-[#6d4c82] shrink-0 mt-1" aria-hidden="true" />
             <p>
-              <strong className="text-emerald-300">Sigilo & Criptografia:</strong> Suas denúncias são encriptadas de ponta a ponta. Você pode relatar de forma 100% anônima sem revelar qualquer dado de identificação.
+              <strong className="text-[#261d2e]">Sigilo:</strong> você pode usar sem se identificar, e os relatos salvos aqui ficam protegidos pelo seu PIN.
             </p>
           </div>
 
           <div className="flex items-start gap-2.5">
-            <EyeOff className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <EyeOff className="w-4 h-4 text-[#8c3d52] shrink-0 mt-1" aria-hidden="true" />
             <p>
-              <strong className="text-amber-300">Botão de Saída Rápida:</strong> Pressione a tecla <kbd className="px-1.5 py-0.5 bg-slate-800 text-amber-300 rounded text-xs border border-slate-700">ESC</kbd> ou o botão no topo a qualquer momento se precisar disfarçar o aplicativo imediatamente.
+              <strong className="text-[#261d2e]">Sair rápido:</strong> aperte <kbd className="px-1.5 py-0.5 bg-[#f3eef8] text-[#4f3461] rounded text-xs border border-[#ddd1ea]">ESC</kbd> ou toque em “Sair rápido” no topo para disfarçar a tela na hora.
             </p>
           </div>
         </div>
 
         {/* Checkbox agreement */}
-        <label className="flex items-start gap-3 p-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 rounded-xl cursor-pointer transition-colors">
+        <label className="flex items-start gap-3 p-3.5 bg-[#faf8fb] hover:bg-[#f3eef8]/60 border border-[#e6dfee] rounded-xl cursor-pointer transition-colors">
           <input 
             type="checkbox" 
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-purple-500 rounded border-slate-600 bg-slate-900 focus:ring-purple-500"
+            className="mt-0.5 w-4 h-4 accent-[#6d4c82] rounded"
           />
-          <span className="text-xs text-slate-200 select-none">
-            Declarar ciência das diretrizes de uso, concordar com os termos de privacidade rigorosos e entender que esta plataforma é um ambiente seguro e de apoio mútuo.
+          <span className="text-xs sm:text-sm text-[#261d2e] select-none leading-relaxed">
+            Entendi como o espaço funciona, como cuidamos da privacidade e me comprometo a usá-lo com respeito.
           </span>
         </label>
 
         {/* Action Button */}
         <button
+          type="button"
           disabled={!agreed}
           onClick={onAccept}
-          className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+          className={`w-full min-h-[48px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
             agreed 
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-900/40 cursor-pointer' 
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+              ? 'bg-[#6d4c82] hover:bg-[#593c6b] text-white cursor-pointer' 
+              : 'bg-[#efe9f4] text-[#8c7e99] cursor-not-allowed'
           }`}
         >
-          <CheckCircle2 className="w-5 h-5" />
-          <span>Confirmar Declaração & Entrar com Segurança</span>
+          <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
+          <span>Entrar com tranquilidade</span>
         </button>
       </div>
     </div>

@@ -143,7 +143,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     setNewContent('');
     setNewCity('none');
     setIsComposerOpen(false);
-    setPostFeedback('Sua publicação foi compartilhada na comunidade.');
+    setPostFeedback('Sua mensagem já está na comunidade. Obrigada por compartilhar.');
     setTimeout(() => setPostFeedback(null), 4000);
   };
 
@@ -164,7 +164,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     onFlagPost(postId, selectedFlagReason);
     setFlagOpenPostId(null);
     setFlaggedPostFeedback(
-      'Publicação sinalizada para revisão da moderação. Obrigada por ajudar a cuidar deste espaço.'
+      'Recebemos seu aviso e nossa equipe vai olhar esta mensagem com cuidado. Obrigada por ajudar.'
     );
     setTimeout(() => setFlaggedPostFeedback(null), 4500);
   };
@@ -188,45 +188,45 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-2">
             <p className="text-xs font-semibold text-[#6d4c82]">
-              Rede de acolhimento e diálogo seguro
+              Um lugar seguro para trocar acolhimento
             </p>
             <h1 className="text-2xl sm:text-3xl font-semibold text-[#261d2e] font-heading">
-              COMUNIDADE — VOZES QUE SE APOIAM
+              Comunidade — vozes que se apoiam
             </h1>
             <p className="text-sm sm:text-base text-[#5a4e66] max-w-2xl">
-              Um espaço para compartilhar vivências, trocar mensagens de apoio e fortalecer outras mulheres em Santa Catarina.
+              Compartilhe o que viveu, leia outras mulheres e deixe uma palavra de carinho. Você pode usar sem se identificar.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() => setIsComposerOpen((prev) => !prev)}
-            className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#6d4c82] hover:bg-[#593c6b] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
+            className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#b05c72] hover:bg-[#914358] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
           >
             <HeartHandshake className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>{isComposerOpen ? 'Fechar formulário' : 'Escrever publicação'}</span>
+            <span>{isComposerOpen ? 'Fechar texto' : 'Escrever na comunidade'}</span>
           </button>
         </div>
       </div>
 
       {/* Safety & Honest Transparency Banner */}
       <section
-        aria-label="Diretrizes de segurança e privacidade da comunidade"
+        aria-label="Cuidados de privacidade na comunidade"
         className="bg-[#f3eef8] border border-[#ddd1ea] rounded-2xl p-5 space-y-2.5"
       >
         <div className="flex items-center gap-2 text-sm font-semibold text-[#4f3461]">
           <ShieldAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
-          <span>Cuidados importantes antes de publicar</span>
+          <span>Para proteger você e todas nós</span>
         </div>
         <ul className="space-y-1.5 text-xs sm:text-sm text-[#493d54] list-disc pl-5 leading-relaxed">
           <li>
-            <strong>Proteja sua identidade:</strong> não informe seu nome completo, endereço exato, telefone, CPF ou nomes de terceiros.
+            <strong>Cuide dos seus dados:</strong> evite escrever nome completo, endereço com número, telefone, CPF ou nomes de outras pessoas.
           </li>
           <li>
-            <strong>Visibilidade pública na comunidade:</strong> todas as mensagens e respostas publicadas aqui ficam visíveis para quem acessa a plataforma. Este espaço não oferece atendimento psicológico 24h nem chat privado entre usuárias — em emergência, ligue <strong className="tabular-nums">190</strong> ou <strong className="tabular-nums">180</strong>.
+            <strong>Espaço aberto de apoio:</strong> o que é publicado aqui fica visível para quem visita a comunidade. Se precisar de ajuda imediata, ligue <strong className="tabular-nums">190</strong> ou <strong className="tabular-nums">180</strong>.
           </li>
           <li>
-            <strong>Ferramentas de cuidado:</strong> você pode denunciar qualquer conteúdo inadequado para moderação ou ocultar publicações de uma autora no seu aparelho.
+            <strong>Se algo incomodar:</strong> você pode avisar a equipe em qualquer mensagem ou ocultar uma participante no seu aparelho.
           </li>
         </ul>
       </section>

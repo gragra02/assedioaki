@@ -173,13 +173,13 @@ export const MenuModal: React.FC<MenuModalProps> = ({
             <div className="space-y-5">
               <div className="border-b border-[#efe9f4] pb-3">
                 <p className="text-xs font-semibold text-[#6d4c82]">
-                  Guia prático e jurídico
+                  Entenda de forma simples
                 </p>
                 <h4 className="text-lg font-semibold text-[#261d2e] font-heading mt-0.5">
-                  Identifique o tipo de violência ou assédio
+                  O que você viveu tem nome
                 </h4>
                 <p className="text-xs sm:text-sm text-[#5a4e66] mt-1">
-                  Selecione abaixo a situação que mais se aproxima do que aconteceu para entender melhor os conceitos legais.
+                  Escolha abaixo a situação mais parecida com o que aconteceu para entender melhor como a lei protege você.
                 </p>
               </div>
 
@@ -218,15 +218,15 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   <>
                     <div className="flex items-center gap-2 text-[#8c3d52] font-semibold text-xs sm:text-sm">
                       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Importunação sexual (Crime • Pena de 1 a 5 anos)</span>
+                      <span>Importunação sexual (é crime)</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                      <strong>Como identificar:</strong> Praticar contra alguém, sem consentimento, ato de caráter sexual para satisfazer a própria vontade ou a de outra pessoa.
+                      <strong>O que é:</strong> Qualquer ato sexual feito sem a sua permissão. A culpa nunca é sua.
                     </p>
                     <ul className="text-xs sm:text-sm text-[#5a4e66] space-y-1 list-disc pl-5">
-                      <li>Toques íntimos indesejados em transporte público, festas ou ruas.</li>
-                      <li>Beijo forçado, puxão ou contato físico sem consentimento.</li>
-                      <li>Exposição ou atos obscenos direcionados à vítima.</li>
+                      <li>Toques sem permissão no ônibus, na rua ou em festas.</li>
+                      <li>Beijo forçado, puxão pelo braço ou encoxada.</li>
+                      <li>Mostrar partes íntimas ou fazer gestos obscenos para você.</li>
                     </ul>
                   </>
                 )}
@@ -235,15 +235,15 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   <>
                     <div className="flex items-center gap-2 text-[#8c3d52] font-semibold text-xs sm:text-sm">
                       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Assédio sexual (Art. 216-A • Relação de hierarquia)</span>
+                      <span>Assédio sexual (no trabalho ou estudo)</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                      <strong>Como identificar:</strong> Constranger alguém para obter vantagem sexual usando a posição de superioridade no trabalho, cargo ou ensino.
+                      <strong>O que é:</strong> Quando alguém em posição de poder usa o cargo para pressionar você a aceitar investidas sexuais.
                     </p>
                     <ul className="text-xs sm:text-sm text-[#5a4e66] space-y-1 list-disc pl-5">
-                      <li>Chefe ou gestor exigindo encontros em troca de promoção ou permanência no emprego.</li>
-                      <li>Professor condicionando nota ou aprovação a favores íntimos.</li>
-                      <li>Chantagens diretas ou veladas ligadas à sua função.</li>
+                      <li>Chefe cobrando encontros em troca de vaga, promoção ou para não demitir você.</li>
+                      <li>Professor prometendo nota ou aprovação em troca de algo íntimo.</li>
+                      <li>Pressões ou chantagens ligadas ao seu trabalho ou curso.</li>
                     </ul>
                   </>
                 )}
@@ -252,15 +252,15 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   <>
                     <div className="flex items-center gap-2 text-[#6d4c82] font-semibold text-xs sm:text-sm">
                       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Assédio moral no trabalho ou ambiente institucional</span>
+                      <span>Assédio moral no trabalho ou estudo</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                      <strong>Como identificar:</strong> Expor a pessoa a situações humilhantes, constrangedoras e repetidas durante o trabalho ou atividade acadêmica.
+                      <strong>O que é:</strong> Humilhações, ofensas ou constrangimentos repetidos no ambiente de trabalho ou de ensino.
                     </p>
                     <ul className="text-xs sm:text-sm text-[#5a4e66] space-y-1 list-disc pl-5">
-                      <li>Gritos, piadas depreciativas e humilhações diante de colegas.</li>
-                      <li>Isolamento proposital, metas impossíveis ou boicote às ferramentas de trabalho.</li>
-                      <li>Perseguição contínua contra colaboradoras ou estudantes.</li>
+                      <li>Gritos, apelidos ofensivos ou piadas que diminuem você na frente de outras pessoas.</li>
+                      <li>Isolar você da equipe ou cobrar metas impossíveis de propósito.</li>
+                      <li>Perseguição constante no dia a dia de trabalho ou aula.</li>
                     </ul>
                   </>
                 )}
@@ -269,15 +269,15 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   <>
                     <div className="flex items-center gap-2 text-[#6d4c82] font-semibold text-xs sm:text-sm">
                       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Perseguição reiterada / Stalking (Art. 147-A)</span>
+                      <span>Perseguição insistente (Stalking)</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                      <strong>Como identificar:</strong> Perseguir alguém de forma repetida, presencialmente ou online, ameaçando sua integridade ou restringindo sua liberdade.
+                      <strong>O que é:</strong> Seguir, vigiar ou procurar você sem parar, pessoalmente ou pela internet, tirando sua paz e liberdade.
                     </p>
                     <ul className="text-xs sm:text-sm text-[#5a4e66] space-y-1 list-disc pl-5">
-                      <li>Vigilância constante na saída do trabalho, faculdade ou casa.</li>
-                      <li>Ligações insistentes, perfis falsos e mensagens sem parar após recusa.</li>
-                      <li>Recados intimidadores ou presentes indesejados.</li>
+                      <li>Aparecer sempre na saída do seu trabalho, curso ou casa.</li>
+                      <li>Ligar sem parar, criar perfis falsos ou mandar mensagens mesmo depois de um "não".</li>
+                      <li>Mandar recados que dão medo ou presentes que você não pediu.</li>
                     </ul>
                   </>
                 )}
@@ -286,14 +286,14 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   <>
                     <div className="flex items-center gap-2 text-[#6d4c82] font-semibold text-xs sm:text-sm">
                       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Violência psicológica contra a mulher (Art. 147-B)</span>
+                      <span>Violência psicológica</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                      <strong>Como identificar:</strong> Causar dano emocional à mulher ou tentar controlar suas ações, escolhas, amizades e decisões.
+                      <strong>O que é:</strong> Machucar você emocionalmente, diminuir sua autoestima ou tentar controlar sua vida e suas escolhas.
                     </p>
                     <ul className="text-xs sm:text-sm text-[#5a4e66] space-y-1 list-disc pl-5">
-                      <li>Ameaças, humilhação, chantagem, manipulação e isolamento.</li>
-                      <li>Ridicularização, controle de celular/dinheiro ou distorção dos fatos.</li>
+                      <li>Ameaças, humilhações, chantagens e afastar você de amigas ou família.</li>
+                      <li>Controlar seu celular, sua roupa ou seu dinheiro, ou fazer você duvidar do que viu.</li>
                     </ul>
                   </>
                 )}
@@ -302,21 +302,21 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                   <>
                     <div className="flex items-center gap-2 text-[#8c3d52] font-semibold text-xs sm:text-sm">
                       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Divulgação não consentida de conteúdo íntimo (Art. 218-C)</span>
+                      <span>Exposição íntima sem permissão</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                      <strong>Como identificar:</strong> Compartilhar, publicar, vender ou transmitir foto ou vídeo íntimo privado sem autorização da pessoa retratada.
+                      <strong>O que é:</strong> Espalhar, postar ou mostrar fotos e vídeos íntimos seus sem a sua autorização — mesmo que você tenha enviado antes em confiança.
                     </p>
                     <ul className="text-xs sm:text-sm text-[#5a4e66] space-y-1 list-disc pl-5">
-                      <li>Vazamento de fotos ou vídeos em grupos de mensagens ou redes sociais.</li>
-                      <li>Chantagem com ameaça de expor imagens íntimas.</li>
+                      <li>Vazar fotos ou vídeos em grupos ou redes sociais.</li>
+                      <li>Ameaçar mostrar imagens íntimas para forçar você a fazer algo.</li>
                     </ul>
                   </>
                 )}
 
                 <div className="pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-[#e6dfee]">
                   <span className="text-xs text-[#5a4e66]">
-                    Você pode organizar e guardar um relato neste aplicativo quando se sentir segura.
+                    Você pode contar e guardar o que viveu neste aplicativo quando se sentir segura.
                   </span>
                   {onOpenReport && (
                     <button
@@ -327,7 +327,7 @@ export const MenuModal: React.FC<MenuModalProps> = ({
                       }}
                       className="min-h-[44px] px-4 py-2 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
                     >
-                      <span>Registrar relato no app</span>
+                      <span>Contar o que aconteceu</span>
                     </button>
                   )}
                 </div>
@@ -688,44 +688,44 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
           {/* SECTION 6: FAQS */}
           {activeSection === 'faqs' && (
-            <div className="space-y-5 animate-in fade-in">
-              <div className="border-b border-slate-200 pb-3">
-                <span className="text-[10px] uppercase font-black text-purple-600 tracking-wider">
-                  Perguntas Frequentes
-                </span>
-                <h4 className="text-lg font-bold text-slate-900 mt-0.5">
-                  Dúvidas Frequentes sobre o AssédioAki
+            <div className="space-y-5">
+              <div className="border-b border-[#efe9f4] pb-3">
+                <p className="text-xs font-semibold text-[#6d4c82]">
+                  Respostas simples
+                </p>
+                <h4 className="text-lg font-semibold text-[#261d2e] font-heading mt-0.5">
+                  Dúvidas frequentes sobre o Assédio Aki
                 </h4>
-                <p className="text-xs text-slate-600 mt-1">
-                  Respostas claras sobre privacidade, validade jurídica, sigilo e funcionamento da plataforma.
+                <p className="text-xs sm:text-sm text-[#5a4e66] mt-1">
+                  Explicações claras sobre sigilo, mapa aproximado e como buscar ajuda em Santa Catarina.
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {[
                   {
-                    q: '1. O relato neste aplicativo é realmente anônimo?',
-                    a: 'Você não precisa criar conta nem informar nome, CPF ou telefone. O texto detalhado do relato é criptografado no navegador com AES-GCM usando o PIN escolhido, mas título curto, categoria, cidade e ponto aproximado ficam visíveis no mapa preventivo. Evite colocar dados que identifiquem você ou sua casa nesses campos.'
+                    q: '1. Posso mesmo contar o que aconteceu sem me identificar?',
+                    a: 'Sim. Você pode usar sem se identificar, sem informar nome, CPF ou telefone. Os detalhes que você escreve ficam protegidos pelo PIN escolhido, e no mapa mostramos apenas um ponto aproximado — por isso, evite escrever dados pessoais no título.'
                   },
                   {
-                    q: '2. Como funciona o código do protocolo e o PIN?',
-                    a: 'Ao salvar um relato, você recebe um código de protocolo e define um PIN. Com os dois, pode consultar o conteúdo completo e adicionar novas anotações na área "Acompanhar protocolo".'
+                    q: '2. Para que servem o código do relato e o PIN?',
+                    a: 'Ao salvar seu relato, você recebe um código e escolhe um PIN. Com os dois, você consegue abrir o que escreveu e acrescentar anotações em "Acompanhar meu relato".'
                   },
                   {
-                    q: '3. O registro no Assédio Aki substitui o Boletim de Ocorrência na Polícia?',
-                    a: 'Não substitui. Para investigação policial oficial ou pedido de medida protetiva, é necessário registrar Boletim de Ocorrência pelo 190, 180, Delegacia Virtual de SC ou presencialmente em uma delegacia. O aplicativo oferece um organizador de texto para facilitar esse preenchimento.'
+                    q: '3. Contar aqui já vale como Boletim de Ocorrência na polícia?',
+                    a: 'Não automaticamente. Quando você quiser investigação policial ou medida protetiva, procure o 190, 180, a Delegacia Virtual de SC ou uma delegacia presencial. Aqui no app há um organizador de texto para facilitar esse passo.'
                   },
                   {
-                    q: '4. O que fica visível no mapa de Santa Catarina?',
-                    a: 'O mapa mostra áreas de incidência com base em registros demonstrativos iniciais e relatos salvos no dispositivo/base conectada, além da localização das Delegacias da Mulher (DPCAMI) e hospitais SAVIS em SC.'
+                    q: '4. O que outras pessoas veem no Mapa de Calor?',
+                    a: 'O mapa mostra áreas aproximadas de relatos (nunca o endereço exato de uma casa) e a localização das DPCAMIs / DEAMs (delegacias que atendem mulheres) e hospitais 24h em SC.'
                   },
                   {
                     q: '5. Como funciona o botão "Sair rápido"?',
-                    a: 'Ao clicar em "Sair rápido" ou pressionar ESC, a tela é imediatamente disfarçada por uma página neutra de clima e receitas. Atenção: esse recurso não apaga o histórico do navegador; se precisar, use o botão "Ir para Google.com" ou feche a aba.'
+                    a: 'Ao tocar em "Sair rápido" ou apertar ESC, a tela muda na hora para uma página comum de previsão do tempo e receitas. Importante: isso não apaga o histórico do navegador; se precisar, toque em "Ir para Google.com" ou feche a aba.'
                   },
                   {
-                    q: '6. Funciona para todas as cidades de Santa Catarina?',
-                    a: 'Sim. O aplicativo cobre os 295 municípios de Santa Catarina no mapa e reúne os contatos das 31 DPCAMIs, hospitais 24h SAVIS, Centrais de Plantão Policial e serviços como NEAVIT, OAB Por Elas, DefenDelas e CEAV.'
+                    q: '6. Funciona para cidades do interior de Santa Catarina?',
+                    a: 'Sim. O mapa inclui todas as 295 cidades de Santa Catarina e reúne os contatos das 31 DPCAMIs / DEAMs, hospitais 24h e redes gratuitas como NEAVIT, OAB Por Elas, DefenDelas e CEAV.'
                   }
                 ].map((faq, idx) => (
                   <div

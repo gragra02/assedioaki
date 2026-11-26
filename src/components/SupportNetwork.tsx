@@ -61,7 +61,7 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
-      setLocateError('Seu navegador não possui suporte a geolocalização.');
+      setLocateError('Este navegador não consegue usar sua localização. Tudo bem: escolha sua cidade na lista abaixo.');
       return;
     }
     setIsLocating(true);
@@ -72,7 +72,7 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
         setIsLocating(false);
       },
       () => {
-        setLocateError('Não foi possível obter sua localização atual.');
+        setLocateError('Não conseguimos encontrar sua localização agora. Você pode buscar pela sua cidade abaixo.');
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -137,10 +137,10 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading">
-              Endereços e contatos em Santa Catarina
+              Lugares de ajuda e contatos em Santa Catarina
             </h2>
             <p className="text-sm text-[#5a4e66]">
-              Delegacias da Mulher (DPCAMI), hospitais 24h (Rede SAVIS), Centrais de Plantão Policial e Delegacia Virtual.
+              DPCAMI / DEAM (delegacias que atendem mulheres), hospitais 24h, plantão policial e Delegacia Virtual.
             </p>
           </div>
         </div>
@@ -575,25 +575,25 @@ export const SupportNetwork: React.FC<SupportNetworkProps> = ({ supportCenters }
       {showLegalGuide && (
         <div className="bg-white border border-[#e6dfee] rounded-2xl p-6 space-y-4">
           <h3 className="text-base font-semibold text-[#261d2e] font-heading">
-            Principais leis de proteção no Brasil
+            Como a lei protege você
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="p-4 bg-[#faf8fb] border border-[#efe9f4] rounded-xl space-y-2">
               <span className="text-xs font-semibold text-[#6d4c82] block">Importunação sexual (Lei 13.718/18)</span>
               <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                Praticar ato libidinoso contra alguém sem consentimento (toques indesejados, beijo forçado).
+                Qualquer toque íntimo, beijo forçado ou ato sexual feito sem a sua permissão é crime.
               </p>
             </div>
             <div className="p-4 bg-[#faf8fb] border border-[#efe9f4] rounded-xl space-y-2">
-              <span className="text-xs font-semibold text-[#6d4c82] block">Assédio sexual (Art. 216-A CP)</span>
+              <span className="text-xs font-semibold text-[#6d4c82] block">Assédio sexual (Art. 216-A)</span>
               <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                Constranger alguém para obter vantagem sexual usando relação de superioridade no trabalho ou estudo.
+                Usar cargo de chefia ou ensino para pressionar ou fazer chantagem sexual também é crime.
               </p>
             </div>
             <div className="p-4 bg-[#faf8fb] border border-[#efe9f4] rounded-xl space-y-2">
               <span className="text-xs font-semibold text-[#6d4c82] block">Perseguição / Stalking (Art. 147-A)</span>
               <p className="text-xs sm:text-sm text-[#493d54] leading-relaxed">
-                Perseguir alguém de forma repetida, física ou digitalmente, ameaçando sua integridade ou liberdade.
+                Seguir, vigiar ou procurar alguém sem parar, tirando sua liberdade e sua paz, é crime.
               </p>
             </div>
           </div>

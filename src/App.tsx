@@ -38,6 +38,7 @@ import {
   toggleSupportOnCommunityPost
 } from './lib/community';
 import { addAccessLog } from './lib/accessLogs';
+import { saveRegisteredUser, isUserBlocked } from './lib/adminAuth';
 import appLogo from './assets/logo.jpg';
 
 const VALID_SECTIONS: NavSection[] = [
@@ -66,7 +67,13 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState<boolean>(false);
   const [isMenuModalOpen, setIsMenuModalOpen] = useState<boolean>(false);
-  const [isSafeSpaceOpen, setIsSafeSpaceOpen] = useState<boolean>(false);
+  const [isSafeSpaceOpen, setIsSafeSpaceOpen] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('assedioaki_safespace_accepted') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   const [menuModalSection, setMenuModalSection] = useState<MenuModalSection>('privacy');
   const [user, setUser] = useState<User | null>(null);
 
@@ -126,6 +133,59 @@ export default function App() {
     lng?: number;
     address?: string;
   }>({});
+
+  // Optional Supabase OAuth session listener (e.g. Google/Gmail redirect)
+  useEffect(() => {
+    if (!supabase) return;
+
+    const applySupabaseSessionUser = async (sessionUser: any) => {
+      if (!sessionUser?.email) return;
+      if (isUserBlocked(sessionUser.email)) {
+        await supabase.auth.signOut();
+        return;
+      }
+      const mappedUser: User = {
+        id: sessionUser.id,
+        name:
+          sessionUser.user_metadata?.full_name ||
+          sessionUser.user_metadata?.name ||
+          sessionUser.email.split('@')[0] ||
+          'Usuária Gmail',
+        email: sessionUser.email,
+        avatar: sessionUser.user_metadata?.avatar_url || undefined,
+        isAnonymous: false,
+        role: 'user',
+        declarationAcceptedAt: new Date().toISOString(),
+        authProvider: 'google'
+      };
+      setUser(mappedUser);
+      await saveRegisteredUser(mappedUser);
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session?.user) {
+        applySupabaseSessionUser(data.session.user);
+      }
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        applySupabaseSessionUser(session.user);
+        addAccessLog(
+          'Autenticação com Gmail / Google Realizada',
+          session.user.user_metadata?.full_name || session.user.email || 'Usuária Gmail',
+          session.user.email,
+          'user'
+        );
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   // Optional Supabase sync when configured
   useEffect(() => {
@@ -190,6 +250,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('assedioaki_reports', JSON.stringify(reports));
   }, [reports]);
+
+  // Lock background scroll while mandatory Safe Space Declaration is open
+  useEffect(() => {
+    if (isSafeSpaceOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSafeSpaceOpen]);
 
   // ESC shortcut activates Quick Exit Mask
   useEffect(() => {
@@ -401,17 +473,29 @@ export default function App() {
         onRedirectExternal={handleRedirectExternal}
       />
 
-      {/* Optional Safe Space Declaration Modal (accessible without blocking help) */}
+      {/* Mandatory Safe Space Declaration Modal on first session visit */}
       <SafeSpaceDeclarationModal
         isOpen={isSafeSpaceOpen}
-        onAccept={() => setIsSafeSpaceOpen(false)}
+        onAccept={() => {
+          try {
+            sessionStorage.setItem('assedioaki_safespace_accepted', 'true');
+          } catch {
+            // ignore storage restrictions
+          }
+          setIsSafeSpaceOpen(false);
+        }}
       />
 
-      {/* Optional Auth Modal (kept discreet in footer, never blocking support) */}
+      {/* Optional Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={(loggedUser) => setUser(loggedUser)}
+        onLoginSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          if (loggedUser.role === 'admin') {
+            setIsAdminPanelOpen(true);
+          }
+        }}
       />
 
       {/* Information & Privacy Modal */}
@@ -430,6 +514,16 @@ export default function App() {
         activeSection={activeSection}
         onSelectSection={(sec) => navigateTo(sec)}
         onQuickExit={() => setIsMasked(true)}
+        user={user}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAdminPanel={() => setIsAdminPanelOpen(true)}
+        onLogout={() => {
+          setIsAdminPanelOpen(false);
+          setUser(null);
+          if (supabase) {
+            supabase.auth.signOut().catch(() => {});
+          }
+        }}
       />
 
       {/* Main Container Content */}
@@ -609,7 +703,7 @@ export default function App() {
               onClick={() => navigateTo('track')}
               className="min-h-[36px] px-2 font-medium text-[#4f3461] hover:text-[#261d2e] cursor-pointer"
             >
-              Acompanhar protocolo
+              Acompanhar meu relato
             </button>
             <button
               type="button"
@@ -640,7 +734,7 @@ export default function App() {
         onGoToHelp={() => navigateTo('help')}
         onGoToLocator={() => navigateTo('help')}
         onQuickExit={() => setIsMasked(true)}
-        isHidden={isMasked}
+        isHidden={isMasked || isSafeSpaceOpen}
       />
 
       {/* Discreet Admin Management Panel */}

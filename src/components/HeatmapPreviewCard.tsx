@@ -96,7 +96,7 @@ export const HeatmapPreviewCard: React.FC<HeatmapPreviewCardProps> = ({
                 MAPA DE CALOR
               </h2>
               <p className="text-sm sm:text-base text-[#5a4e66] leading-relaxed max-w-xl">
-                Visualize regiões com registros de assédio e ajude a construir uma rede de informação e proteção.
+                Veja onde há mais relatos em Santa Catarina e encontre lugares de ajuda perto de você.
               </p>
             </div>
 
@@ -104,16 +104,16 @@ export const HeatmapPreviewCard: React.FC<HeatmapPreviewCardProps> = ({
             <div className="flex flex-wrap gap-3 pt-1 text-xs text-[#493d54]">
               <div className="px-3 py-2 rounded-xl bg-[#faf8fb] border border-[#e6dfee]">
                 <strong className="text-[#261d2e] tabular-nums">{reports.length}</strong>{' '}
-                {reports.length === 1 ? 'registro no mapa' : 'registros no mapa'}
-                {userSubmittedCount > 0 ? ` (${userSubmittedCount} enviado${userSubmittedCount > 1 ? 's' : ''} por você/usuárias)` : ' (inclui exemplos iniciais)'}
+                {reports.length === 1 ? 'relato no mapa' : 'relatos no mapa'}
+                {userSubmittedCount > 0 ? ` (${userSubmittedCount} enviado${userSubmittedCount > 1 ? 's' : ''} por usuárias)` : ' (com exemplos iniciais)'}
               </div>
               <div className="px-3 py-2 rounded-xl bg-[#faf8fb] border border-[#e6dfee]">
                 <strong className="text-[#261d2e] tabular-nums">{distinctCities}</strong>{' '}
-                {distinctCities === 1 ? 'município' : 'municípios'} em SC
+                {distinctCities === 1 ? 'cidade' : 'cidades'} em SC
               </div>
               <div className="px-3 py-2 rounded-xl bg-[#faf8fb] border border-[#e6dfee]">
                 <strong className="text-[#261d2e] tabular-nums">{totalSupportCenters}</strong>{' '}
-                delegacias e hospitais mapeados
+                delegacias e hospitais de apoio
               </div>
             </div>
 
@@ -133,14 +133,14 @@ export const HeatmapPreviewCard: React.FC<HeatmapPreviewCardProps> = ({
                 className="min-h-[48px] px-4 py-3 rounded-xl bg-[#fbf2f4] hover:bg-[#f4e3e8] border border-[#e7cbd3] text-[#7f3347] font-semibold text-sm inline-flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span>Registrar ocorrência</span>
+                <span>Contar o que aconteceu</span>
               </button>
             </div>
 
             <p className="text-xs text-[#5a4e66] flex items-start gap-1.5">
               <ShieldCheck className="w-4 h-4 text-[#6d4c82] shrink-0 mt-0.5" aria-hidden="true" />
               <span>
-                Os pontos exibidos são aproximados ou fictícios para proteger a identidade de quem registra.
+                Os pontos no mapa são aproximados, para proteger quem conta o que viveu. Você pode usar sem se identificar.
               </span>
             </p>
           </div>

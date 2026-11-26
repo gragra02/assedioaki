@@ -43,13 +43,13 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
     );
 
     if (!found) {
-      setErrorMsg('Protocolo não encontrado neste dispositivo ou base conectada.');
+      setErrorMsg('Não encontramos esse código por aqui. Confira se está certinho e tente de novo.');
       setIsDecrypting(false);
       return;
     }
 
     if (found.accessKey && found.accessKey !== accessPin.trim()) {
-      setErrorMsg('PIN de acesso incorreto para este protocolo.');
+      setErrorMsg('Esse PIN não confere. Tente de novo, sem pressa.');
       setIsDecrypting(false);
       return;
     }
@@ -117,10 +117,10 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-semibold text-[#261d2e] font-heading">
-              Acompanhamento de protocolo
+              Acompanhar meu relato
             </h2>
             <p className="text-sm text-[#5a4e66]">
-              Consulte o histórico de um relato salvo no aplicativo usando o número do protocolo e o PIN escolhido.
+              Digite o código do relato e o seu PIN para abrir o que você salvou com privacidade.
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
         <form onSubmit={handleSearchAndDecrypt} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label htmlFor="tracker-protocol-id" className="block text-xs font-semibold text-[#261d2e] mb-1">
-              Número do protocolo
+              Código do relato
             </label>
             <input
               id="tracker-protocol-id"
@@ -143,7 +143,7 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
 
           <div>
             <label htmlFor="tracker-pin" className="block text-xs font-semibold text-[#261d2e] mb-1">
-              PIN de acesso
+              Seu PIN
             </label>
             <input
               id="tracker-pin"
@@ -163,7 +163,7 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
               className="w-full min-h-[44px] py-2 px-4 bg-[#6d4c82] hover:bg-[#593c6b] text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Lock className="w-4 h-4" aria-hidden="true" />
-              <span>{isDecrypting ? 'Desbloqueando...' : 'Consultar relato'}</span>
+              <span>{isDecrypting ? 'Abrindo...' : 'Ver meu relato'}</span>
             </button>
           </div>
         </form>
@@ -247,9 +247,9 @@ export const CaseTracker: React.FC<CaseTrackerProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-semibold text-[#4f3461] flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#6d4c82]" aria-hidden="true" />
-                <span>Dados desbloqueados com seu PIN</span>
+                <span>O que você contou</span>
               </span>
-              <span className="text-xs text-[#5a4e66]">Proteção AES-GCM</span>
+              <span className="text-xs text-[#5a4e66]">Protegido com seu PIN</span>
             </div>
 
             <div className="text-sm text-[#493d54] space-y-2">

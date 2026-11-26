@@ -65,7 +65,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           Estamos aqui para ajudar você a encontrar orientação e apoio.
         </p>
         <p className="text-sm text-[#6b5e77]">
-          Não é necessário fazer cadastro para explorar o mapa, ler orientações ou acessar os canais de ajuda.
+          Você pode usar sem se identificar para ver o mapa, ler orientações ou procurar ajuda.
         </p>
       </section>
 

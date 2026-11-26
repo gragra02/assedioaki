@@ -32,6 +32,20 @@ export const supabase = isSupabaseConfigured
   ? createClient(rawUrl, rawAnonKey)
   : null;
 
+export async function isGoogleOAuthEnabled(): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const res = await fetch(`${rawUrl.replace(/\/$/, '')}/auth/v1/settings`, {
+      headers: { apikey: rawAnonKey }
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Boolean(data?.external?.google);
+  } catch {
+    return false;
+  }
+}
+
 export function mapDbRowToReport(row: any, comments: ReportComment[] = []): Report {
   return {
     id: row.id,
