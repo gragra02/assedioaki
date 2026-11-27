@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { Report, ReportComment } from '../types';
 
-const rawUrl = (import.meta.env?.VITE_SUPABASE_URL || '').trim();
-const rawAnonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY || '').trim();
+function cleanEnvValue(val: unknown): string {
+  return String(val || '')
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '')
+    .trim();
+}
+
+const rawUrl = cleanEnvValue(import.meta.env?.VITE_SUPABASE_URL);
+const rawAnonKey = cleanEnvValue(import.meta.env?.VITE_SUPABASE_ANON_KEY);
 
 export function isPlaceholderSupabaseValue(value: string): boolean {
   const normalized = value.trim().toLowerCase();

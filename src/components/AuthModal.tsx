@@ -88,8 +88,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const googleClientId = (import.meta.env?.VITE_GOOGLE_CLIENT_ID || '').trim();
-  const supabaseUrl = (import.meta.env?.VITE_SUPABASE_URL || '').trim().replace(/\/$/, '');
+  const googleClientId = (import.meta.env?.VITE_GOOGLE_CLIENT_ID || '')
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '');
+  const supabaseUrl = (import.meta.env?.VITE_SUPABASE_URL || '')
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '')
+    .replace(/\/$/, '');
 
   const handleQuickAdminFill = () => {
     const adminCfg = getAdminConfig();
@@ -106,10 +111,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       // 1. Real Google SSO via Supabase OAuth (when Google Provider is enabled in Supabase Dashboard)
       if (supabase && (await isGoogleOAuthEnabled())) {
+        const redirectUrl = `${window.location.origin}${window.location.pathname}`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin,
+            redirectTo: redirectUrl,
             queryParams: {
               prompt: 'select_account'
             }
